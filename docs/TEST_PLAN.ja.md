@@ -157,13 +157,18 @@ SDL ビルドでは上記のとおり別関数なので寸法が決まるだけ�
 
 ## 7. CI
 
-`tests/` に pytest + uv。`.github/workflows/tests.yml`。TinyGFX と同じ構成。
+`tests/` に pytest + uv。`.github/workflows/tests.yml`。
+
+**コアは `arduino-cli core install` で入れない。`sketch.yaml` の profile で入れる**
+（[DECISIONS.ja.md](DECISIONS.ja.md) D29）。バージョンを固定できるのが profile だけなので、
+CI もローカルも同じコアが入り、**コアが上がって黙って結果が変わることがない。**
+テストが生成するスケッチにも profile を付ける。
 
 | Tier | 必要なコア | CI で回すか |
 | --- | --- | --- |
-| 0 | esp32 | ✅ |
-| 1 | `lang-ship:host` | ✅ |
-| 2 | esp32 | ✅（重いので代表ボードのみ） |
+| 0 | `esp32:esp32`（profile 固定） | ✅ |
+| 1 | `lang-ship:host`（profile 固定） | ✅ |
+| 2 | `esp32:esp32`（profile 固定） | ✅（重いので代表ボードのみ） |
 | 3 | 実機 | ❌ 手動 |
 
 結果は**群単位**で出す（[DECISIONS.ja.md](DECISIONS.ja.md) D19）。

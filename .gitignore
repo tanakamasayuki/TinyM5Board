@@ -20,3 +20,6 @@ tmp/
 tests/ardutest/
 node_modules/
 build/
+
+# arduino-cli build output next to a test sketch
+tests/**/build/

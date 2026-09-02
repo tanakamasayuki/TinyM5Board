@@ -454,6 +454,67 @@ Board.getPin(TinyM5::Pin::RgbLed);   // M5Unified からの移行用。同じ値
 定数に畳まれて実行時コストはゼロ。**両方あって困らない**ので、
 名前を合わせられるものは合わせる方針（D16）に従って併設する。
 
+### D29. Arduino コアは個別インストールせず、`sketch.yaml` の profile で入れる
+
+`arduino-cli core install` を使わない。**バージョンを固定できるのが profile だけ**のため。
+
+```yaml
+profiles:
+  atomlite:
+    fqbn: esp32:esp32:m5stack_atom
+    platforms:
+      - platform: esp32:esp32 (3.3.11)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - dir: ../../
+```
+
+`arduino-cli compile --profile atomlite` が、指定のバージョンを
+**`~/.arduino15/internal/<packager>_<arch>_<version>_<hash>/` へ隔離して**入れてからビルドする
+（実測、arduino-cli 1.5.0）。`packages/` は汚れず、**バージョンごとに別の実体**になる。
+CI もローカルも同じものが入り、**コアが上がって黙って結果が変わることがない。**
+
+テストが生成するスケッチも同じ形にする。CI のワークフローに
+`core install` を書かない。
+
+### D30. 最初のボードは AtomLite
+
+v1 のスコープは「最終的にはなるべく多く」だが、**起点は作りやすいものにする。**
+
+AtomLite を選ぶ理由:
+
+- 画面なし・電源ハードなし・ボタン 1 つ・RGB LED 1 つ。**骨格を通すのに最小**
+- しかも**本命の領域**（画面なしボード 29 機種、D3）の代表そのもの
+- 表示や PMIC が無いので、`kHasDisplay` / `kHasBattery` が `false` の側を最初に踏める
+
+ただし**「初期化一切なし」ではない。** `M5Unified.cpp:2299` に、
+CH552 が GPIO0 に 4V をかけて WiFi 感度が落ちる問題への対策として
+GPIO0 を出力 HIGH にする処理がある。
+
+これは役割名では表現できない一点ものなので、**`power_on` の逃げ道（D26）が
+最初のボードから必要になる。** 逃げ道が本当に要ることを、起点で確認できる。
+
+### D31. 機能の有無はプリプロセッサのマクロでも出す
+
+`kHasBattery` のような `constexpr` 定数だけでは足りない。
+
+```cpp
+if constexpr (TINYM5_BOARD::kHasBattery) {
+  Board.Power.getBatteryVoltage();   // ← 画面なしボードでコンパイルエラー
+}
+```
+
+**テンプレートの外では、`if constexpr` の捨てられた枝も名前解決される。**
+`Board.Power` が存在しないボードでは、実行されない側に書いてもコンパイルが通らない。
+
+無い機能を no-op で埋めない（D5 / REQUIREMENTS §7）と決めた以上、
+移植できるサンプルを書くには `#if` が要る。だから
+`TINYM5_HAS_BATTERY` / `_DISPLAY` / `_BACKLIGHT` / `_EXTERNAL_I2C` を
+ボードヘッダから出す。
+
+`constexpr` 定数のほうも残す。実行時の分岐や `static_assert` にはそちらが要る。
+**どちらもカタログの同じ列から生成する**ので、食い違いようがない。
+
 ---
 
 ## 2. 調査メモから変えた点
@@ -482,8 +543,8 @@ Board.getPin(TinyM5::Pin::RgbLed);   // M5Unified からの移行用。同じ値
 | --- | --- | --- |
 | ~~Q1~~ | テスト戦略 | **決着（D24 / D25）。** [TEST_PLAN.ja.md](TEST_PLAN.ja.md) |
 | ~~Q2~~ | カタログのスキーマ | **決着（D26 / D27）。** [BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md) |
-| Q3 | v1 のスコープ | 未決（§2-8） |
+| ~~Q3~~ | v1 のスコープ | **決着（D30）。** 最終的には全機種、起点は AtomLite |
 | Q4 | `begin()` の降り口の形（enum のビット和か `config_t` か） | 未決 |
-| Q5 | arduino-esp32 3.x の実際の `-std`。C++17 が使えるか | **未確認** |
+| ~~Q5~~ | arduino-esp32 の `-std` | **確認済み。`-std=gnu++2b`**（3.3.11 / 2026-09-02）。C++17 は問題なく使える |
 | Q6 | `TinyM5Board` の名前が 3 レジストリで空いているか | **未確認**（GitHub のリポジトリは取得済み） |
 | ~~Q7~~ | ピン照会 API の形 | **決着（D28）。** 定数が正、`getPin()` を併設 |

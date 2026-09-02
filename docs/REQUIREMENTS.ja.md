@@ -211,8 +211,15 @@ StampC3 / StampC3U が該当する。さらに ToughC5 / CoreMatrix / NessoN1 �
 
 ### 5.4 言語
 
-C++17 が使える見込み（**暫定** — arduino-esp32 3.x の実際の `-std` を確認して確定する）。
-TinyGFX の C++11 制約はここには効かない。
+**C++23（`-std=gnu++2b`）。** arduino-esp32 3.3.11 の
+`esp32-arduino-libs/<soc>/flags/cpp_flags` を確認した（2026-09-02）。
+`-fexceptions` は有効、`-fno-rtti`。
+
+TinyGFX の C++11 制約はここには効かない。`if constexpr`・インライン変数・
+`constexpr` の緩和はすべて使える。
+
+ただし**使う理由がある機能だけ使う。** 目的は機能ではなく、
+機能フラグで分岐するサンプル（`if constexpr (Board::kHasBattery)`）が書けること。
 
 ## 6. 対象ボード
 

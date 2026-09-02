@@ -1,0 +1,5 @@
+# The board under test comes in as a string, because that is all the
+# build-property channel can carry. TinyM5Board.h turns it into the
+# computed include.
+[defines]
+TINYM5_TEST_BOARD_HEADER = "TINYM5_BOARD_HEADER"

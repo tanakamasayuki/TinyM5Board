@@ -4,19 +4,39 @@
 
 ## 1. 現在地
 
-**設計の骨格が決まったところ。実装は 1 行も無い。**
+**AtomLite が 1 機種、ホストのゴールデンテストまで通っている。**
 
 | 項目 | 状況 |
 | --- | --- |
-| 調査メモ（M5GFX / M5Unified の実態調査） | **あり。** [research/](research/) に 4 本。確定事項ではない |
-| 責務・設計・決定の文書化 | **一巡した**（[REQUIREMENTS.ja.md](REQUIREMENTS.ja.md) / [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) / [DECISIONS.ja.md](DECISIONS.ja.md)） |
-| ライブラリ解決の条件 | **実測で確定**（arduino-cli 1.5.0、2026-09-02。CORE_DESIGN §3.1） |
-| リポジトリ整備 | **途中**（§3） |
-| ボードカタログのスキーマ | **決まった**（[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md) / DECISIONS D26〜D28） |
-| テスト戦略 | **決まった**（[TEST_PLAN.ja.md](TEST_PLAN.ja.md) / DECISIONS D24・D25） |
-| `src/` 一式 | **無い** |
-| examples | **無い** |
-| 利用者向けドキュメント | **無い** |
+| 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
+| 調査記録 | **あり。** [research/](research/) に事実のみ |
+| ライブラリ解決の条件 | **実測で確定**（arduino-cli 1.5.0） |
+| ボードカタログのスキーマ | **決まった**（[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md)） |
+| テスト戦略 | **決まった**（[TEST_PLAN.ja.md](TEST_PLAN.ja.md)） |
+| `tools/gen_boards.py` | **あり。** ボードヘッダ / `TinyM5Board.h` / `BoardId.h` を生成、`--check` つき |
+| `src/TinyM5Board/Common.h` | **あり。** 型・enum・`resetPulse` |
+| `src/TinyM5Board/Button.h` | **あり。** デバウンス + エッジ。click カウントは未実装 |
+| ボード定義 | **AtomLite のみ**（[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md) の全列を使う最小例） |
+| `tests/begin/` | **通っている。** ホストで `begin()` の I2C / GPIO 列を記録しゴールデン比較 |
+| `tests/common_libs/tinym5_trace/` | **あり。** バス観測ポートの記録ヘルパ |
+| `examples/Hello` | **あり。** 実機コア（`esp32:esp32:m5stack_atom`）でビルド確認済み |
+| `.github/workflows/tests.yml` | **あり。** `core install` を使わない構成 |
+| 利用者向け README | **無い。** 機種が揃ってから |
+| 電源チップのドライバ | **無い。** AXP192 / AXP2101 / M5PM1 とも未着手 |
+
+### 1.1 実装して分かったこと
+
+**`if constexpr` では機能の有無を分岐できない**（D31）。テンプレートの外では
+捨てられた枝も名前解決されるので、`Board.Power` が無いボードでは
+実行されない側に書いてもコンパイルが通らない。`TINYM5_HAS_*` マクロを追加した。
+
+**ビルドフラグからは文字列しか渡せない。** pytest-embedded の
+`build_config.toml` は `-DNAME="value"` の形でしか注入できないため、
+`TINYM5_BOARD_HEADER` という computed include の入口を足した。
+結果として**入口が 3 通り**になった（直接 include / マクロ / ヘッダ名の文字列）。
+
+**AtomLite の実測**: ESP32 でフラッシュ 294,272 B / RAM 23,548 B。
+大半は Arduino のベースラインと `Wire`。
 
 ## 2. 次にやること
 
@@ -68,23 +88,37 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 
 **手で 64 機種を並べない。** 追加のたびに漏れる。
 
-### 2-4. 1 機種を通しで作る
+### 2-4. AtomLite を通しで作る（D30）
 
-土台の上に最初の 1 機種を載せて、`Board.begin()` から `Board.update()` までを通す。
-どの機種にするかは手元の実機で決める。
+起点は **AtomLite**。画面なし・電源ハードなし・ボタン 1 つ・RGB LED 1 つで、
+骨格を通すのに最小。しかも**本命の領域**（画面なしボード 29 機種）の代表そのもの。
 
-### 2-5. v1 のスコープを決める（DECISIONS Q3）
-
-調査メモは「Stick 系 4 機種 + AXP192 / M5PM1」を提案しているが、
-**価値の源泉はボード表のほう**（メモ 03 自身の結論）なので、
-2 段構えにする案がある。
-
-| 段 | 内容 | 対象 |
+| 列 | 値 | 出所 |
 | --- | --- | --- |
-| 全機種 | ピン表・ボード ID・群・機能フラグ | 64 機種 |
-| 通しで実装 | `begin()` / 電源 / バックライト / ボタン | 手元で確認できる機種から |
+| `board_id` | 128 | `boards.hpp:49` |
+| `soc` | esp32 | |
+| `i2c_int` | SDA 25 / SCL 21 | `M5Unified.cpp:143` |
+| `i2c_ext` | SDA 26 / SCL 32 | 同上（Port A） |
+| `rgb_led` | (27, 1) | `M5Unified.cpp:266` |
+| `power_hold` | なし | `_pin_table_other1` に無い |
+| `buttons` | A = 39 / active-low | `M5Unified.cpp:2336` |
+| `pmic` / `backlight` / `display` | なし | |
 
-**未決。** 2-4 が終わってから決めたほうが判断材料が揃う。
+**「初期化一切なし」ではない。** `M5Unified.cpp:2299` に、CH552 が GPIO0 に 4V を
+かけて WiFi 感度が落ちる問題への対策として GPIO0 を出力 HIGH にする処理がある。
+役割名で表現できない一点ものなので、**`power_on` の逃げ道が最初から要る。**
+
+なお GPIO39 は ESP32 では入力専用でプルアップを持たないため `INPUT_PULLUP` にできない。
+これは SoC の制約なので**列に持たず `soc` とピン番号から導出する**
+（[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md) §4）。
+
+### 2-5. 広げる
+
+最終的にはなるべく多くの機種を載せる。安い順に:
+
+1. **電源ハードを持たない画面なしボード** — ピン表だけで済む
+2. **POWER_HOLD 1 本のボード** — CoreInk / AirQ / Paper / TimerCam
+3. **AXP192 / M5PM1 を共有する機種** — チップドライバは共通、ピン割当だけ
 
 ## 3. リポジトリ整備
 

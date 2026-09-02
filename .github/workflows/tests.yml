@@ -1,0 +1,54 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      # No `core install` here on purpose. Every sketch.yaml pins the
+      # platform version, and `--profile` installs exactly that, isolated
+      # per version under ~/.arduino15/internal/. A core that moves
+      # underneath us cannot change a result silently.
+      # (docs/DECISIONS.ja.md D29)
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install test dependencies
+        working-directory: tests
+        run: uv sync
+
+      - name: Board catalogue is current
+        run: python3 tools/gen_boards.py --check
+
+      - name: Run pytest
+        working-directory: tests
+        run: uv run pytest -v -s --profile host --html=report.html --self-contained-html
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: |
+            tests/report.html
+            tests/**/output/**
+          if-no-files-found: ignore
