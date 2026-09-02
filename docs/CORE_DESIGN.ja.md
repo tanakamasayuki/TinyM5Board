@@ -300,6 +300,24 @@ static constexpr bool kSharesI2cBus   = false;  // 内部と外部が物理的�
 `Board.Backlight` を画面なしボードで書けばコンパイルエラーになる。
 サンプルは `kHas*` を見て `#error` で親切に止められる。
 
+## 8.3 照会できるピン
+
+**4 つだけ**（D27）。
+
+```cpp
+Board.kI2cSda / kI2cScl        // 内部 I2C
+Board.kI2cExtSda / kI2cExtScl  // Port A（外部 Grove）。無ければ -1
+Board.kRgbLed / kRgbLedCount   // 無ければ -1 / 0
+Board.kPowerHold               // 無ければ -1
+```
+
+`constexpr` 定数が正で、`Board.getPin(TinyM5::Pin::RgbLed)` を
+M5Unified からの移行用に併設する（D28）。対象が 4 つしかないので
+`switch` 1 本で定数に畳まれ、実行時コストはゼロ。
+
+**IMU / RTC / Speaker / Mic のピンは出さない。** M5Unified の `getPin()` にも無く、
+転記元が構造化データとして存在しないため（D27）。
+
 ## 9. 個体差の扱い
 
 Core2 の PMIC は AXP192 / AXP2101 で割れる。**ファイルは 1 本のまま。**
@@ -357,21 +375,18 @@ adapter は **TinyM5Board 側に置く。** GFX 側に置くと、その GFX が
 
 ## 12. カタログ生成
 
-`tools/gen_boards.py` がカタログ表から生成する。
+`tools/gen_boards.py` がカタログ表から、ボードヘッダ 64 本 / `README` の表 /
+`keywords.txt` / `TinyM5Board.h` の `#define` 分岐を生成する。
 
-**生成するもの:** ボードヘッダ 64 本 / README の表 / `keywords.txt` /
-`TinyM5Board.h` の `#define` 分岐
+**列の定義と「持たないもの」の一覧は [BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md)。**
 
-**エントリが持つのは「回路図を見ないと分からないこと」だけ:**
+要点だけ:
 
-| 持つ | 持たない |
-| --- | --- |
-| ピン番号と極性 | I2C 周波数の既定値 |
-| 電源チップ種別と I2C アドレス | リセットパルス幅 |
-| ADC ピンと分圧比（PMIC なし機） | レジスタマップ |
-| バックライト方式と freq / offset | 輝度カーブの式（方式ごとに決まる） |
-| パネルのピン・解像度・オフセット | パネル初期化コマンド列 |
-| 群と機能フラグ | |
-| ボード ID（m5stack-board-id の数値） | |
+- **データは表、手順はコード。** 表を DSL にしない（D26）
+- **手順は省略可。** POWER_HOLD・レール投入・LCD リセット・ボタン・バックライトは
+  列から生成する。書くのは収まらないボードだけ
+- **手順にレジスタ番号を書かない。** ボード側は役割名で言い、`0x12` はチップドライバに閉じ込める
+- **機能フラグは列に持たない。** 対応する列が `None` かどうかで導出する。
+  `kHasBacklight = true` なのに `backlight` が空、という食い違いを起こせなくする
 
 手で 64 機種を並べると、追加のたびに漏れる。

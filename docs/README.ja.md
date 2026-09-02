@@ -11,7 +11,7 @@ TinyM5Board の設計文書。**まだ実装は無い。** 確定していない
 | 区分 | 言語 | 対象 |
 | --- | --- | --- |
 | 使う人が読むもの | 日英 | `../README.ja.md`、`API.ja.md`、`../examples/README.ja.md` |
-| 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)、[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)、[DECISIONS.ja.md](DECISIONS.ja.md)、[TEST_PLAN.ja.md](TEST_PLAN.ja.md)、[research/](research/) |
+| 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)、[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)、[DECISIONS.ja.md](DECISIONS.ja.md)、[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md)、[TEST_PLAN.ja.md](TEST_PLAN.ja.md)、[research/](research/) |
 | **コード中のコメント** | **英語のみ** | `../src/`、`../examples/`、`../tests/`、`../tools/` |
 
 ## 読む順
@@ -21,6 +21,7 @@ TinyM5Board の設計文書。**まだ実装は無い。** 確定していない
 | **何を作るライブラリで、どこまでが責務なのか知る** | **[REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)** |
 | **API の形と内部構造を知る** | **[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)** |
 | **なぜそう設計したのかを知る／論点を潰す** | **[DECISIONS.ja.md](DECISIONS.ja.md)** |
+| **カタログが何を持ち、何を持たないか** | **[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md)** |
 | **何をどう検証するか** | **[TEST_PLAN.ja.md](TEST_PLAN.ja.md)** |
 | 現在地と残作業を知る | [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) |
 | **M5GFX / M5Unified が実際に何をしているか**（事実のみ） | [research/](research/) |

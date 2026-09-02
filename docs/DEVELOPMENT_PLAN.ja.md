@@ -12,7 +12,7 @@
 | 責務・設計・決定の文書化 | **一巡した**（[REQUIREMENTS.ja.md](REQUIREMENTS.ja.md) / [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) / [DECISIONS.ja.md](DECISIONS.ja.md)） |
 | ライブラリ解決の条件 | **実測で確定**（arduino-cli 1.5.0、2026-09-02。CORE_DESIGN §3.1） |
 | リポジトリ整備 | **途中**（§3） |
-| ボードカタログのスキーマ | **未決**（DECISIONS Q2） |
+| ボードカタログのスキーマ | **決まった**（[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md) / DECISIONS D26〜D28） |
 | テスト戦略 | **決まった**（[TEST_PLAN.ja.md](TEST_PLAN.ja.md) / DECISIONS D24・D25） |
 | `src/` 一式 | **無い** |
 | examples | **無い** |
@@ -38,7 +38,7 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 
 **ボードを 1 機種も書く前にここを作る。** 逆順にすると、増やした分だけ壊れる。
 
-### 2-2. カタログのスキーマを決める（DECISIONS Q2）
+### 2-2. カタログを埋める
 
 列の定義。「回路図を見ないと分からないことだけ」に絞る
 （[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §12）。
