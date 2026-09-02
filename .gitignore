@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+output/
+.venv/
+.pytest*/
+.env
+
+# Generated helper downloads
+tools/cache/
+
+# User settings
+.vscode/
+arduino_secrets.h
+*.bat
+#*.txt
+#sketch.yaml
+temp
+tmp/
+# 実機テストの成果物（ArduTest の artifact 置き場）
+tests/ardutest/
+node_modules/
+build/
