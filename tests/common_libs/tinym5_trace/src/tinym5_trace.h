@@ -148,8 +148,33 @@ inline void bus(const char *label, TwoWire &w)
 }
 
 /// Stop recording and close the trace.
+///
+/// The board's own data goes in as well as the bus traffic. A wrong
+/// panel offset or a wrong I2C pin is exactly the sort of thing that
+/// never shows up as a crash, and the catalogue is the product - so the
+/// golden covers it rather than only covering the sequence.
 inline void finish()
 {
+  line("--- board ---");
+  line("name=%s id=%d", TINYM5_BOARD::kName, (int)TINYM5_BOARD::kBoardId);
+  line("pins i2c=%d/%d ext=%d/%d led=%d/%u hold=%d", TINYM5_BOARD::kI2cSda,
+       TINYM5_BOARD::kI2cScl, TINYM5_BOARD::kI2cExtSda, TINYM5_BOARD::kI2cExtScl,
+       TINYM5_BOARD::kRgbLed, TINYM5_BOARD::kRgbLedCount, TINYM5_BOARD::kPowerHold);
+  line("has display=%d backlight=%d battery=%d extI2c=%d shared=%d",
+       TINYM5_BOARD::kHasDisplay, TINYM5_BOARD::kHasBacklight,
+       TINYM5_BOARD::kHasBattery, TINYM5_BOARD::kHasExternalI2c,
+       TINYM5_BOARD::kSharesI2cBus);
+#if TINYM5_HAS_DISPLAY
+  {
+    const auto d = TINYM5_BOARD::display();
+    line("--- display ---");
+    line("spi mosi=%d miso=%d sclk=%d dc=%d cs=%d rst=%d 3wire=%d", d.mosi, d.miso,
+         d.sclk, d.dc, d.cs, d.rst, d.threeWire);
+    line("freq write=%u read=%u", (unsigned)d.freqWrite, (unsigned)d.freqRead);
+    line("panel %ux%u offset=%u,%u rotation=%u invert=%d", d.width, d.height,
+         d.offsetX, d.offsetY, d.rotation, d.invert);
+  }
+#endif
   line("--- state ---");
   bus("i2c0", Wire);
   bus("i2c1", Wire1);

@@ -8,6 +8,14 @@ pinMode(12, OUTPUT)
 digitalWrite(12, 1)
 digitalWrite(12, 0)
 digitalWrite(12, 1)
+--- board ---
+name=M5StickC Plus2 id=17
+pins i2c=21/22 ext=32/33 led=-1/0 hold=4
+has display=1 backlight=1 battery=1 extI2c=1 shared=0
+--- display ---
+spi mosi=15 miso=-1 sclk=13 dc=14 cs=5 rst=-1 3wire=0
+freq write=40000000 read=15000000
+panel 135x240 offset=52,40 rotation=0 invert=1
 --- state ---
 i2c0: begun sda=21 scl=22 hz=100000
 i2c1: begun sda=32 scl=33 hz=100000

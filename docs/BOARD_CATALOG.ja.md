@@ -82,31 +82,52 @@ TinyGFX の `panels/` と同じ規律（[DECISIONS.ja.md](DECISIONS.ja.md) 参�
 
 | 列 | 例 |
 | --- | --- |
-| `buttons` | `{A: (37, low), B: (39, low), Pwr: (35, low)}` / `Pwr: pek` |
+| `buttons` | `{A: 37, B: 39, Pwr: 35}` —— 既定は active-low。極性が違うなら `(pin, False)` |
+| | `{Pwr: "pek"}` —— **ピンが無い。** 電源チップの中のキーを I2C で読む |
+
+`"pek"` は StickC / StickC Plus のためにある。**隣り合う機種で、同じ「電源ボタン」が
+PMIC の中と素の GPIO に分かれる**（StickC Plus2 は `35`）。
+この差を吸収できる層はボード層しかない（[DECISIONS.ja.md](DECISIONS.ja.md) D18）。
+`kBtnPwr` は `-1` になり、`Board.BtnPwr` の読み出しだけが差し替わる。
 
 ### 2.3 電源
 
 | 列 | 例 | 備考 |
 | --- | --- | --- |
-| `pmic` | `adc` / `axp192` / `axp2101` / `m5pm1` / `none` | `(axp192, axp2101)` と書くと**実行時に名乗らせる**（D5） |
+| `pmic` | `adc` / `axp192` / `axp2101` / `m5pm1` / 省略 | `(axp192, axp2101)` と書くと**実行時に名乗らせる**（D5） |
 | `bat_adc` | `(38, 2000)` | `pmic == adc` のときだけ。`(ピン, 分圧比 ×1000)` |
-| `rails` | `(ldo2, ldo3, dcdc1, exten)` | `begin()` で投入するレール。**役割名で書く** |
+| `rails` | `("dcdc1", "ldo2", "ldo3", "exten")` | `begin()` で投入するレール。**役割名で書き、レジスタ番号は書かない** |
+
+`rails` がそのまま `TinyM5BoardPowerAxp192::Dcdc1 \| ...` になり、
+チップドライバが `reg 0x12` に落とす。**どのレールが何に繋がっているかはボードの知識、
+どのビットがどのレールかはチップの知識**、という分け方（D26）。
 
 ### 2.4 バックライト
 
 | 例 | 意味 |
 | --- | --- |
-| `(pwm, 27, 256, 40)` | `(方式, ピン, Hz, duty offset)` |
-| `(axp192_ldo2,)` | AXP192 の LDO2 電圧 |
-| `(m5ioe1_pwm, ch, pin)` | M5IOE1 の PWM チャネル |
-| `None` | バックライトを持たない（EPD / OLED / LED / 画面なし） |
+| `("pwm", 27, 256, 40)` | `(方式, ピン, Hz, duty offset)`。**実装済み** |
+| `("axp192_ldo2",)` | AXP192 の LDO2 電圧を明るさに使う。**実装済み** |
+| `("m5ioe1_pwm", ch, pin)` | M5IOE1 の PWM チャネル。未実装 |
+| 省略 | バックライトを持たない（EPD / OLED / LED / 画面なし） |
+
+輝度カーブは方式ごとに決まるので**列に持たない**。
+PWM は M5GFX の 9 bit 整数式、AXP192 は LDO2 の電圧ステップ（5〜15）で、
+どちらも M5GFX と同じ数字になる。
 
 ### 2.5 表示
 
 | 例 |
 | --- |
-| `bus=spi2, mosi=15, miso=-1, sclk=13, dc=14, cs=5, rst=12,`<br>`freq_write=40M, freq_read=15M, w=135, h=240, ox=52, oy=40, invert` |
-| `None`（画面なしボード） |
+| `bus=spi2, mosi=15, miso=14, sclk=13, dc=23, cs=5, rst=18,`<br>`freq_write=27M, freq_read=14M, w=80, h=160, ox=26, oy=1,`<br>`rotation=2, invert=True, three_wire=True` |
+| 省略（画面なしボード） |
+
+`three_wire` は「読み書きが 1 本のデータ線を共有する」配線。
+Stick 系はこれで、4 線前提のバス設定では**読み戻しができない**。
+導出できないので列に持つ。
+
+`rst` は `begin()` が処理済みなので、`display()` が返す値は常に `-1` になる
+（GFX 側にリセットを打たせないための合図）。
 
 **パネルの型番は持たない。** AtomS3 / Tab5 / M5Stack 初代のように
 同じ機種名で載っているガラスが違うことがあり、判別には SPI バスが要る

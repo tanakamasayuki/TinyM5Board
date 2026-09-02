@@ -1,0 +1,30 @@
+--- begin() ---
+pinMode(37, INPUT)
+pinMode(39, INPUT)
+i2c0 write 0x34 [03] (no stop)
+i2c0 read  0x34 1 -> [03]
+i2c0 write 0x34 [12] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [12 4D]
+i2c0 write 0x34 [82 FF]
+pinMode(18, OUTPUT)
+digitalWrite(18, 1)
+digitalWrite(18, 0)
+digitalWrite(18, 1)
+i2c0 write 0x34 [12] (no stop)
+i2c0 read  0x34 1 -> [4D]
+i2c0 write 0x34 [12 4D]
+i2c0 write 0x34 [28] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [28 A0]
+--- board ---
+name=M5StickC id=6
+pins i2c=21/22 ext=32/33 led=-1/0 hold=-1
+has display=1 backlight=1 battery=1 extI2c=1 shared=0
+--- display ---
+spi mosi=15 miso=14 sclk=13 dc=23 cs=5 rst=-1 3wire=1
+freq write=27000000 read=14000000
+panel 80x160 offset=26,1 rotation=2 invert=1
+--- state ---
+i2c0: begun sda=21 scl=22 hz=100000
+i2c1: begun sda=32 scl=33 hz=100000

@@ -4,51 +4,53 @@
 
 ## 1. 現在地
 
-**POWER_HOLD 系 4 機種が、ホストのゴールデンテストと実機コアのビルドまで通っている。**
+**6 機種。POWER_HOLD 系と AXP192 系が、ホストのゴールデンと実機コアのビルドまで通っている。**
 
 | 項目 | 状況 |
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
-| 調査記録 | **あり。** [research/](research/) に事実のみ |
-| `tools/gen_boards.py` | **あり。** ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` つき |
-| ボード定義 | **4 機種** —— AtomLite / TimerCam / Capsule / StickCPlus2 |
-| 電源 | `PowerAdc`（PMIC なし機の ADC + 分圧比）**のみ**。AXP192 / AXP2101 / M5PM1 は未着手 |
-| バックライト | `BacklightPwm`（M5GFX と同じ 9 bit の整数カーブ）**のみ** |
-| ボタン | `Button.h`。デバウンス + エッジ。click カウントは未実装 |
-| 表示 | `TinyM5::Display` を返すだけ（StickCPlus2 で実装確認） |
-| `tests/begin/` | **4 機種とも通っている** |
-| `examples/Hello` | **あり。** 実機コアでビルド確認済み |
-| `.github/workflows/tests.yml` | **あり。** `core install` を使わない構成 |
+| `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` つき |
+| ボード定義 | **6 機種** —— AtomLite / TimerCam / Capsule / StickCPlus2 / StickC / StickCPlus |
+| 電源 | `PowerAdc`（PMIC なし機）/ **`PowerAxp192`**。AXP2101 / M5PM1 は未着手 |
+| バックライト | `BacklightPwm`（M5GFX と同じ 9 bit 整数カーブ）/ **`BacklightAxp192`**（LDO2 電圧） |
+| ボタン | `Button.h`。GPIO と **PMIC の PEK** を同じ型で扱う。click カウントは未実装 |
+| 表示 | `TinyM5::Display` を返すだけ。3 線式の表現あり |
+| `tests/begin/` | **6 機種とも通っている。** レジスタファイルの device model つき |
+| `examples/Hello` | 実機コアでビルド確認済み |
 | 利用者向け README | **無い。** 機種が揃ってから |
 
-### 1.1 実測（arduino-esp32 3.3.11）
+### 1.1 実測（arduino-esp32 3.3.11 / 同一スケッチ）
 
-| ボード | FQBN | フラッシュ |
+| ボード | フラッシュ | 備考 |
 | --- | --- | --- |
-| AtomLite | `esp32:esp32:m5stack_atom` | 294,272 B |
-| TimerCam | `esp32:esp32:m5stack_stickc_plus2` (代用) | 321,624 B |
-| StickCPlus2 | `esp32:esp32:m5stack_stickc_plus2` | 335,651 B |
-| Capsule | `esp32:esp32:m5stack_capsule` | 333,241 B |
+| AtomLite | 312,708 B | 電源ハードなし |
+| **StickC** | **314,000 B** | **AXP192 ドライバ + バックライト込みで +1,292 B** |
+| StickCPlus | 314,016 B | |
 
-大半は Arduino のベースラインと `Wire`。**ボード定義そのものは数百バイト**。
+大半は Arduino のベースラインと `Wire`。**チップドライバ 1 個が 1 KB強**で、
+使わないボードには 1 バイトも入らない。
 
 ### 1.2 実装して分かったこと
 
 **`if constexpr` では機能の有無を分岐できない**（D31）。テンプレートの外では
-捨てられた枝も名前解決されるので、`Board.Power` が無いボードでは
-実行されない側に書いてもコンパイルが通らない。`TINYM5_HAS_*` マクロを追加した。
+捨てられた枝も名前解決される。`TINYM5_HAS_*` マクロを追加した。
 
-**ビルドフラグからは文字列しか渡せない。** `TINYM5_BOARD_HEADER` という
-computed include の入口を足した。入口は 3 通りになった
-（直接 include / マクロ / ヘッダ名の文字列）。
+**ゴールデンは順序だけでは足りない。** StickC と StickC Plus は
+**電源手順もピンも完全に同一**で、違うのはパネルだけ。バス上のやりとりを
+比べるだけでは 2 機種の区別がつかないので、`--- board ---` と
+`--- display ---` としてカタログの中身もゴールデンに入れた
+（[TEST_PLAN.ja.md](TEST_PLAN.ja.md) §3.2.1）。
 
-**pytest-embedded は `dut` がモジュールスコープで、`expect` のバッファは
+**チップに名乗らせないとテストが 1 行も進まない。** 検出で止まるため。
+レジスタファイルの device model を置いた。PMIC の模倣ではなく、
+**分岐を走らせるための最小限**。
+
+**pytest-embedded は `dut` がモジュールスコープ、`expect` のバッファは
 セッション共有。** ボードごとにディレクトリを分け、`expect` の文字列に
-ボード名を入れる必要がある（[TEST_PLAN.ja.md](TEST_PLAN.ja.md) §3.4）。
-生成側で守っているので踏み直すことはない。
+ボード名を入れる（[TEST_PLAN.ja.md](TEST_PLAN.ja.md) §3.4）。生成側で守っている。
 
-**AtomLite と TimerCam は「初期化なし」ではなかった。** AtomLite は CH552 が
-GPIO0 に 4V をかける問題への対策、TimerCam は点灯したままの LED の消灯。
+**「初期化なし」のボードは無かった。** AtomLite は CH552 が GPIO0 に 4V を
+かける問題への対策、TimerCam は点灯したままの LED の消灯。
 どちらも `power_on` の逃げ道（D26）が要る一点もの。
 
 ## 2. 次にやること
@@ -131,11 +133,13 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 
 1. ~~電源ハードを持たない画面なしボード~~ —— AtomLite で通した
 2. ~~POWER_HOLD 1 本のボード~~ —— TimerCam / Capsule / StickCPlus2 で通した
-3. **AXP192 の 5 機種** —— StickC / StickC Plus / Core2 / Tough / Station。
-   **チップドライバが初めて要る。** `setReadHook` でチップに応答させる経路も
-   ここで初めて通る
-4. **AXP2101 / M5PM1** —— M5PM1 は 9 機種に効く
-5. 残りの画面なしボード —— ピン表だけで済むものが多い
+3. ~~AXP192~~ —— StickC / StickC Plus で通した。ドライバは Core2 / Tough /
+   Station にもそのまま効く
+4. **Core2 / Tough / Station** —— AXP192 は済んでいるが、**リセットが I2C 越し**
+   （`pin_rst` を GFX に渡さず `begin()` が済ませる）で、Core2 は
+   **AXP192 / AXP2101 の実行時判別**（D5）が初めて要る
+5. **AXP2101 / M5PM1** —— M5PM1 は 9 機種に効く
+6. 残りの画面なしボード —— ピン表だけで済むものが多い
 
 ### 2-6. host-arduino-core への要望
 

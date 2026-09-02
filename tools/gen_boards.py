@@ -175,6 +175,50 @@ digitalWrite(2, LOW);
                      w=135, h=240, ox=52, oy=40, invert=True),
         power_on="",
     ),
+    dict(
+        id="StickC",
+        name="M5StickC",
+        board_id=6,
+        family="Stick",
+        soc="esp32",
+        note="The original Stick. Without the AXP192 rails the screen stays\n"
+             "black however correct the SPI wiring is - the single most common\n"
+             "way to get stuck on this board.\n"
+             "Its panel wants a gamma command after init (CMD_GAMMASET 0x08)\n"
+             "that a graphics library has to send; this library does not drive\n"
+             "panels.",
+        i2c_int=(21, 22),
+        i2c_ext=(32, 33),
+        rgb_led=None,
+        buttons={"A": 37, "B": 39, "Pwr": "pek"},
+        pmic="axp192",
+        rails=("dcdc1", "ldo2", "ldo3", "exten"),
+        backlight=("axp192_ldo2",),
+        display=dict(bus="spi2", mosi=15, miso=14, sclk=13, dc=23, cs=5, rst=18,
+                     freq_write=27000000, freq_read=14000000,
+                     w=80, h=160, ox=26, oy=1, rotation=2, invert=True,
+                     three_wire=True),
+    ),
+    dict(
+        id="StickCPlus",
+        name="M5StickC Plus",
+        board_id=13,
+        family="Stick",
+        soc="esp32",
+        note="Same board as the StickC as far as power and pins go - only the\n"
+             "glass changed, from an ST7735S to a bigger ST7789.",
+        i2c_int=(21, 22),
+        i2c_ext=(32, 33),
+        rgb_led=None,
+        buttons={"A": 37, "B": 39, "Pwr": "pek"},
+        pmic="axp192",
+        rails=("dcdc1", "ldo2", "ldo3", "exten"),
+        backlight=("axp192_ldo2",),
+        display=dict(bus="spi2", mosi=15, miso=14, sclk=13, dc=23, cs=5, rst=18,
+                     freq_write=40000000, freq_read=15000000,
+                     w=135, h=240, ox=52, oy=40, invert=True,
+                     three_wire=True),
+    ),
 ]
 
 
@@ -183,8 +227,11 @@ digitalWrite(2, LOW);
 # Columns a board may leave out. Omitting one says "this board has no such
 # hardware", which is also what the kHas* flags are derived from.
 OPTIONAL = dict(note="", i2c_ext=None, power_hold=None, rgb_led=None,
-                buttons={}, pmic=None, bat_adc=None, backlight=None,
+                buttons={}, pmic=None, bat_adc=None, rails=(), backlight=None,
                 display=None, power_on="")
+
+# Rail names as a board header spells them, mapped to the driver's enum.
+RAIL_ENUM = {"axp192": "TinyM5BoardPowerAxp192"}
 
 
 def derive(b):
@@ -237,10 +284,15 @@ def emit_board(entry):
     a('#include "TinyM5Board/Common.h"\n')
     if b["buttons"]:
         a('#include "TinyM5Board/Button.h"\n')
-    if b["bat_adc"]:
+    if b["pmic"] == "adc":
         a('#include "TinyM5Board/PowerAdc.h"\n')
-    if b["backlight"] and b["backlight"][0] == "pwm":
-        a('#include "TinyM5Board/BacklightPwm.h"\n')
+    elif b["pmic"] == "axp192":
+        a('#include "TinyM5Board/PowerAxp192.h"\n')
+    if b["backlight"]:
+        if b["backlight"][0] == "pwm":
+            a('#include "TinyM5Board/BacklightPwm.h"\n')
+        elif b["backlight"][0] == "axp192_ldo2":
+            a('#include "TinyM5Board/BacklightAxp192.h"\n')
     a("\n")
 
     a(f"class {cls} {{\n public:\n")
@@ -267,7 +319,9 @@ def emit_board(entry):
         a("  static constexpr int8_t kRgbLed = -1;\n")
         a("  static constexpr uint8_t kRgbLedCount = 0;\n")
     for name, spec in b["buttons"].items():
-        a(f"  static constexpr int8_t kBtn{name} = {button_pin(spec)};\n")
+        # -1 says "there is no pin": the key is inside the power chip.
+        pin = -1 if spec == "pek" else button_pin(spec)
+        a(f"  static constexpr int8_t kBtn{name} = {pin};\n")
     a("\n")
 
     a("  // ---- what this board has ----\n")
@@ -281,16 +335,35 @@ def emit_board(entry):
         a(f"  static constexpr bool {flag} = {'true' if val else 'false'};\n")
     a("\n")
 
-    if b["bat_adc"]:
+    if b["pmic"] == "adc":
         a("  // ---- power ----\n")
         a(f"  TinyM5BoardPowerAdc Power{{{b['bat_adc'][0]}, {b['bat_adc'][1]}}};\n\n")
-    if b["backlight"] and b["backlight"][0] == "pwm":
-        _, bpin, bfreq, boff = b["backlight"]
+    elif b["pmic"] == "axp192":
+        cls_p = RAIL_ENUM["axp192"]
+        rails = " | ".join(f"{cls_p}::{r.capitalize()}" for r in b["rails"])
+        a("  // ---- power ----\n")
+        a("  // The rails this board's schematic actually uses; the chip driver\n")
+        a("  // knows nothing about what they feed.\n")
+        a(f"  {cls_p} Power{{{rails}}};\n\n")
+    if b["backlight"]:
         a("  // ---- backlight ----\n")
-        a(f"  TinyM5BoardBacklightPwm Backlight{{{bpin}, {bfreq}, {boff}}};\n\n")
+        if b["backlight"][0] == "pwm":
+            _, bpin, bfreq, boff = b["backlight"]
+            a(f"  TinyM5BoardBacklightPwm Backlight{{{bpin}, {bfreq}, {boff}}};\n\n")
+        elif b["backlight"][0] == "axp192_ldo2":
+            a("  TinyM5BoardBacklightAxp192 Backlight{Power};\n\n")
     if b["buttons"]:
         a("  // ---- buttons ----\n")
         for name, spec in b["buttons"].items():
+            if spec == "pek":
+                a("  // No pin: the power key lives in the PMIC and is read over\n")
+                a("  // I2C, rate limited so update() does not flood the bus.\n")
+                a(f"  TinyM5BoardButton Btn{name}{{\n")
+                a("      [](void *p) {\n")
+                a(f"        return static_cast<{RAIL_ENUM[b['pmic']]} *>(p)->getKeyState() != 0;\n")
+                a("      },\n")
+                a("      &Power, true};\n")
+                continue
             pin, low = button_pin(spec), button_active_low(spec)
             cmp_ = "LOW" if low else "HIGH"
             a(f"  TinyM5BoardButton Btn{name}{{[] {{ return digitalRead(kBtn{name}) == {cmp_}; }}}};\n")
@@ -306,6 +379,8 @@ def emit_board(entry):
         a("      Wire1.begin(kI2cExtSda, kI2cExtScl);\n")
     a("    }\n")
     for name, spec in b["buttons"].items():
+        if spec == "pek":
+            continue
         mode = "INPUT" if (d["classic"] and 34 <= button_pin(spec) <= 39) else "INPUT_PULLUP"
         a(f"    pinMode(kBtn{name}, {mode});\n")
     if b["power_on"]:
@@ -314,13 +389,17 @@ def emit_board(entry):
         # the generated context it lands in.
         for line in b["power_on"].rstrip("\n").split("\n"):
             a(f"    {line}\n" if line else "\n")
-    if b["bat_adc"]:
+    if b["pmic"] == "adc":
         a("    Power.begin();\n")
+    elif b["pmic"] == "axp192":
+        a("    // The chip is soldered on, so no answer is a real fault. The\n")
+        a("    // rails have to be up before the panel is taken out of reset.\n")
+        a("    const bool ok = Power.begin(Wire);\n")
     if b["display"] and b["display"]["rst"] >= 0:
         a(f"    TinyM5::resetPulse({b['display']['rst']});\n")
-    if b["backlight"] and b["backlight"][0] == "pwm":
+    if b["backlight"]:
         a("    Backlight.begin();\n")
-    a("    return true;\n  }\n\n")
+    a("    return ok;\n  }\n\n" if b["pmic"] == "axp192" else "    return true;\n  }\n\n")
 
     if b["power_hold"] is not None:
         a("  /// Latch the power rail on. Called by begin(), and safe to call\n")
@@ -348,7 +427,8 @@ def emit_board(entry):
         a(f"        /*freqWrite*/ {dd['freq_write']}, /*freqRead*/ {dd['freq_read']},\n")
         a(f"        /*width*/ {dd['w']}, /*height*/ {dd['h']},\n")
         a(f"        /*offsetX*/ {dd['ox']}, /*offsetY*/ {dd['oy']},\n")
-        a(f"        /*rotation*/ {dd.get('rotation', 0)}, /*invert*/ {'true' if dd['invert'] else 'false'}}};\n")
+        a(f"        /*rotation*/ {dd.get('rotation', 0)}, /*invert*/ {'true' if dd['invert'] else 'false'},\n")
+        a(f"        /*threeWire*/ {'true' if dd.get('three_wire') else 'false'}}};\n")
         a("  }\n\n")
     a("  static constexpr const char *getBoardName() { return kName; }\n")
     a("  static constexpr TinyM5::BoardId getBoard() { return kBoardId; }\n\n")
@@ -452,7 +532,24 @@ default_profile: host
 """
 
 
+# What has to answer on the bus for a board's begin() to get past its
+# chip detection. Without this the driver bails out and the trace stops
+# at the first read.
+CHIP_MODEL = {
+    "axp192": ("0x34", "0x03", "0x03"),
+}
+
+
 def emit_sketch(b):
+    d = derive(b)
+    chip = CHIP_MODEL.get(d["pmic"])
+    model_include = '#include <tinym5_model_i2c.h>\n' if chip else ""
+    model_setup = ""
+    if chip:
+        addr, reg, val = chip
+        model_setup = (f"\n  // The {d['pmic'].upper()} has to answer or begin() stops at its\n"
+                       f"  // detection read and the rest of the trace never happens.\n"
+                       f"  TinyM5Trace::useChip(0, {addr}, {reg}, {val});\n")
     return f'''// What Board.begin() does on the {b["name"]}, recorded for the golden.
 //
 // The include is the spelling the README recommends, so the test walks
@@ -461,12 +558,12 @@ def emit_sketch(b):
 // Generated by tools/gen_boards.py.
 #include <TinyM5Board{b["id"]}.h>
 #include <tinym5_trace.h>
-
+{model_include}
 void setup()
 {{
   Serial.begin(115200);
   TinyM5Trace::start("{b["id"]}");
-
+{model_setup}
   Board.begin();
 
   TinyM5Trace::finish();

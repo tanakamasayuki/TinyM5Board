@@ -62,6 +62,8 @@ class TinyM5BoardPowerAdc {
   /// and nothing about current direction.
   TinyM5::Charge isCharging() const { return TinyM5::Charge::Unknown; }
 
+  TinyM5::Pmic getType() const { return TinyM5::Pmic::Adc; }
+
   int8_t getAdcPin() const { return _pin; }
   uint16_t getAdcRatioX1000() const { return _ratio; }
 

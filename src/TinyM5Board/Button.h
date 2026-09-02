@@ -22,7 +22,13 @@
 
 class TinyM5BoardButton {
  public:
+  /// Two shapes of reader. The plain one suits a GPIO button, where a
+  /// capture-less lambda around digitalRead is four bytes and no
+  /// allocation. The second takes a context pointer, which is what a PMIC
+  /// power key needs: it has to reach the chip driver, and that driver is
+  /// a sibling member of the board rather than a global.
   using Reader = bool (*)();
+  using ReaderCtx = bool (*)(void *);
 
   /// `rateLimit` is for buttons that cost an I2C transaction to read (a
   /// PMIC power key). Those are sampled once per debounce interval
@@ -30,6 +36,11 @@ class TinyM5BoardButton {
   /// the press until it is read.
   constexpr explicit TinyM5BoardButton(Reader reader, bool rateLimit = false)
       : _read(reader), _rateLimit(rateLimit)
+  {
+  }
+
+  constexpr TinyM5BoardButton(ReaderCtx reader, void *ctx, bool rateLimit = false)
+      : _readCtx(reader), _ctx(ctx), _rateLimit(rateLimit)
   {
   }
 
@@ -44,7 +55,7 @@ class TinyM5BoardButton {
     _lastSample = msec;
     _sampled = true;
 
-    const bool raw = _read();
+    const bool raw = _read ? _read() : _readCtx(_ctx);
     if (raw != _rawState) {
       _rawState = raw;
       _lastRawChange = msec;
@@ -90,7 +101,9 @@ class TinyM5BoardButton {
   uint32_t getUpdateMsec() const { return _lastMsec; }
 
  private:
-  Reader _read;
+  Reader _read = nullptr;
+  ReaderCtx _readCtx = nullptr;
+  void *_ctx = nullptr;
   bool _rateLimit;
   uint32_t _msecDebounce = 10;
   uint32_t _msecHold = 500;

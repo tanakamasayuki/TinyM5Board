@@ -3,6 +3,10 @@ pinMode(33, OUTPUT)
 digitalWrite(33, 1)
 pinMode(2, OUTPUT)
 digitalWrite(2, 0)
+--- board ---
+name=M5TimerCam id=132
+pins i2c=12/14 ext=4/13 led=-1/0 hold=33
+has display=0 backlight=0 battery=1 extI2c=1 shared=0
 --- state ---
 i2c0: begun sda=12 scl=14 hz=100000
 i2c1: begun sda=4 scl=13 hz=100000

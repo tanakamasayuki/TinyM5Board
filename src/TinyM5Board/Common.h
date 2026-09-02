@@ -30,6 +30,16 @@ enum class Family : uint8_t {
   Other,
 };
 
+/// Which chip answers the power questions. Same shape as M5Unified's
+/// `pmic_t`, so `Board.Power.getType()` transfers.
+enum class Pmic : uint8_t {
+  Unknown,
+  Adc,  ///< no chip at all - a divider straight onto an ADC pin
+  Axp192,
+  Axp2101,
+  M5pm1,
+};
+
 /// Charge state. Same shape as M5Unified's `is_charging_t`.
 enum class Charge : uint8_t {
   Unknown,
@@ -75,6 +85,10 @@ struct Display {
   uint16_t width, height, offsetX, offsetY;
   uint8_t rotation;
   bool invert;
+  /// One data line for both directions: reads come back on MOSI. The
+  /// Stick panels are wired this way and a bus set up for four wires
+  /// will not read from them.
+  bool threeWire;
 };
 
 /// Drive a reset line low and back. Board headers call this rather than
