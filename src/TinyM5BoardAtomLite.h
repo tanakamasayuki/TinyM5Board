@@ -97,6 +97,11 @@ class TinyM5BoardAtomLite {
 #define TINYM5_HAS_BACKLIGHT 0
 #define TINYM5_HAS_BATTERY 0
 #define TINYM5_HAS_EXTERNAL_I2C 1
+#define TINYM5_HAS_RGB_LED 1
+#define TINYM5_HAS_BTN_A 1
+#define TINYM5_HAS_BTN_B 0
+#define TINYM5_HAS_BTN_C 0
+#define TINYM5_HAS_BTN_PWR 0
 
 // The board this sketch drives, written once so that portable code can
 // name it without naming the product.

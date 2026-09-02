@@ -137,6 +137,11 @@ class TinyM5BoardStickCPlus2 {
 #define TINYM5_HAS_BACKLIGHT 1
 #define TINYM5_HAS_BATTERY 1
 #define TINYM5_HAS_EXTERNAL_I2C 1
+#define TINYM5_HAS_RGB_LED 0
+#define TINYM5_HAS_BTN_A 1
+#define TINYM5_HAS_BTN_B 1
+#define TINYM5_HAS_BTN_C 0
+#define TINYM5_HAS_BTN_PWR 1
 
 // The board this sketch drives, written once so that portable code can
 // name it without naming the product.

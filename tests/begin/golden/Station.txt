@@ -1,0 +1,31 @@
+--- begin() ---
+pinMode(37, INPUT)
+pinMode(38, INPUT)
+pinMode(39, INPUT)
+i2c0 write 0x34 [03] (no stop)
+i2c0 read  0x34 1 -> [03]
+i2c0 write 0x34 [12] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [12 04]
+i2c0 write 0x34 [82 FF]
+pinMode(15, OUTPUT)
+digitalWrite(15, 1)
+digitalWrite(15, 0)
+digitalWrite(15, 1)
+i2c0 write 0x34 [12] (no stop)
+i2c0 read  0x34 1 -> [04]
+i2c0 write 0x34 [12 0C]
+i2c0 write 0x34 [28] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [28 0A]
+--- board ---
+name=M5Station id=9
+pins i2c=21/22 ext=32/33 led=4/1 hold=-1
+has display=1 backlight=1 battery=1 extI2c=1 shared=0
+--- display ---
+spi mosi=23 miso=-1 sclk=18 dc=19 cs=5 rst=-1 3wire=1
+freq write=40000000 read=15000000
+panel 135x240 offset=52,40 rotation=1 invert=1
+--- state ---
+i2c0: begun sda=21 scl=22 hz=100000
+i2c1: begun sda=32 scl=33 hz=100000

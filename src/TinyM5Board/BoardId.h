@@ -11,6 +11,8 @@ namespace TinyM5 {
 enum class BoardId : uint16_t {
   Unknown = 0,
   StickC = 6,
+  Tough = 8,
+  Station = 9,
   StickCPlus = 13,
   StickCPlus2 = 17,
   AtomLite = 128,

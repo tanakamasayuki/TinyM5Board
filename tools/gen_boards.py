@@ -219,6 +219,60 @@ digitalWrite(2, LOW);
                      w=135, h=240, ox=52, oy=40, invert=True,
                      three_wire=True),
     ),
+    dict(
+        id="Station",
+        name="M5Station",
+        board_id=9,
+        family="Other",
+        soc="esp32",
+        note="A DIN-rail controller with the StickC Plus's screen turned\n"
+             "sideways. AXP192 like the Stick, but the panel reset is a real\n"
+             "GPIO here rather than a chip pin.",
+        i2c_int=(21, 22),
+        i2c_ext=(32, 33),
+        rgb_led=(4, 1),
+        buttons={"A": 37, "B": 38, "C": 39, "Pwr": "pek"},
+        pmic="axp192",
+        rails=("ldo2",),
+        backlight=("axp192_ldo3",),
+        display=dict(bus="spi2", mosi=23, miso=-1, sclk=18, dc=19, cs=5, rst=15,
+                     freq_write=40000000, freq_read=15000000,
+                     w=135, h=240, ox=52, oy=40, rotation=1, invert=True,
+                     three_wire=True),
+    ),
+    dict(
+        id="Tough",
+        name="M5Tough",
+        board_id=8,
+        family="Core",
+        soc="esp32",
+        note="A sealed Core2. Nothing about the screen is a pin: LDO2 feeds it,\n"
+             "the chip's IO4 resets it and LDO3 dims it, so begin() has to talk\n"
+             "to the AXP192 before there is anything to draw on.\n"
+             "Its buttons are touch zones, not GPIOs, so only the power key is\n"
+             "here. The SD card shares the LCD's SPI bus and is not yet taken\n"
+             "out of SD mode - see docs/DEVELOPMENT_PLAN.ja.md.",
+        i2c_int=(21, 22),
+        i2c_ext=(32, 33),
+        buttons={"Pwr": "pek"},
+        pmic="axp192",
+        rails=("ldo2",),
+        rail_mv=dict(ldo2=3300),  # LCD power
+        backlight=("axp192_ldo3",),
+        display=dict(bus="spi2", mosi=23, miso=38, sclk=18, dc=15, cs=5, rst=-1,
+                     freq_write=40000000, freq_read=16000000,
+                     w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
+                     three_wire=True),
+        power_on="""\
+// Nothing here is a pin. IO4 is the panel's reset line and IO1 is the
+// touch controller's, so both have to be configured on the chip before
+// either can be pulsed. (M5GFX.cpp reg_data_axp192_first)
+Power.gpioOutput(TinyM5BoardPowerAxp192::Gpio::Io4);     // LCD RST
+Power.gpioOpenDrain(TinyM5BoardPowerAxp192::Gpio::Io1);  // touch RST
+Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io4);
+Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
+""",
+    ),
 ]
 
 
@@ -227,8 +281,8 @@ digitalWrite(2, LOW);
 # Columns a board may leave out. Omitting one says "this board has no such
 # hardware", which is also what the kHas* flags are derived from.
 OPTIONAL = dict(note="", i2c_ext=None, power_hold=None, rgb_led=None,
-                buttons={}, pmic=None, bat_adc=None, rails=(), backlight=None,
-                display=None, power_on="")
+                buttons={}, pmic=None, bat_adc=None, rails=(), rail_mv={},
+                backlight=None, display=None, power_on="")
 
 # Rail names as a board header spells them, mapped to the driver's enum.
 RAIL_ENUM = {"axp192": "TinyM5BoardPowerAxp192"}
@@ -291,7 +345,7 @@ def emit_board(entry):
     if b["backlight"]:
         if b["backlight"][0] == "pwm":
             a('#include "TinyM5Board/BacklightPwm.h"\n')
-        elif b["backlight"][0] == "axp192_ldo2":
+        elif b["backlight"][0].startswith("axp192_"):
             a('#include "TinyM5Board/BacklightAxp192.h"\n')
     a("\n")
 
@@ -340,18 +394,24 @@ def emit_board(entry):
         a(f"  TinyM5BoardPowerAdc Power{{{b['bat_adc'][0]}, {b['bat_adc'][1]}}};\n\n")
     elif b["pmic"] == "axp192":
         cls_p = RAIL_ENUM["axp192"]
-        rails = " | ".join(f"{cls_p}::{r.capitalize()}" for r in b["rails"])
+        rails = " | ".join(f"{cls_p}::{r.capitalize()}" for r in b["rails"]) or "0"
+        mv = b["rail_mv"]
+        args = rails
+        if mv.get("ldo2") or mv.get("ldo3"):
+            args += f", {mv.get('ldo2', 0)}, {mv.get('ldo3', 0)}"
         a("  // ---- power ----\n")
-        a("  // The rails this board's schematic actually uses; the chip driver\n")
-        a("  // knows nothing about what they feed.\n")
-        a(f"  {cls_p} Power{{{rails}}};\n\n")
+        a("  // The rails this board's schematic actually uses, and the voltages\n")
+        a("  // that are not the chip's default. The driver knows which bit is\n")
+        a("  // which; the board knows what they feed.\n")
+        a(f"  {cls_p} Power{{{args}}};\n\n")
     if b["backlight"]:
         a("  // ---- backlight ----\n")
         if b["backlight"][0] == "pwm":
             _, bpin, bfreq, boff = b["backlight"]
             a(f"  TinyM5BoardBacklightPwm Backlight{{{bpin}, {bfreq}, {boff}}};\n\n")
-        elif b["backlight"][0] == "axp192_ldo2":
-            a("  TinyM5BoardBacklightAxp192 Backlight{Power};\n\n")
+        elif b["backlight"][0].startswith("axp192_"):
+            ch = b["backlight"][0].split("_")[1].capitalize()
+            a(f"  TinyM5BoardBacklightAxp192<TinyM5::Axp192Light::{ch}> Backlight{{Power}};\n\n")
     if b["buttons"]:
         a("  // ---- buttons ----\n")
         for name, spec in b["buttons"].items():
@@ -383,18 +443,18 @@ def emit_board(entry):
             continue
         mode = "INPUT" if (d["classic"] and 34 <= button_pin(spec) <= 39) else "INPUT_PULLUP"
         a(f"    pinMode(kBtn{name}, {mode});\n")
-    if b["power_on"]:
-        # The catalogue holds the snippet unindented; place it in the body here
-        # so that a hand-written escape hatch does not have to know about
-        # the generated context it lands in.
-        for line in b["power_on"].rstrip("\n").split("\n"):
-            a(f"    {line}\n" if line else "\n")
     if b["pmic"] == "adc":
         a("    Power.begin();\n")
     elif b["pmic"] == "axp192":
         a("    // The chip is soldered on, so no answer is a real fault. The\n")
         a("    // rails have to be up before the panel is taken out of reset.\n")
         a("    const bool ok = Power.begin(Wire);\n")
+    if b["power_on"]:
+        # The catalogue holds the snippet unindented; place it in the body here
+        # so that a hand-written escape hatch does not have to know about
+        # the generated context it lands in.
+        for line in b["power_on"].rstrip("\n").split("\n"):
+            a(f"    {line}\n" if line else "\n")
     if b["display"] and b["display"]["rst"] >= 0:
         a(f"    TinyM5::resetPulse({b['display']['rst']});\n")
     if b["backlight"]:
@@ -452,8 +512,14 @@ def emit_board(entry):
     for macro, val in (("TINYM5_HAS_DISPLAY", d["has_display"]),
                        ("TINYM5_HAS_BACKLIGHT", d["has_backlight"]),
                        ("TINYM5_HAS_BATTERY", d["has_battery"]),
-                       ("TINYM5_HAS_EXTERNAL_I2C", d["has_ext_i2c"])):
+                       ("TINYM5_HAS_EXTERNAL_I2C", d["has_ext_i2c"]),
+                       ("TINYM5_HAS_RGB_LED", bool(d["rgb_led"]))):
         a(f"#define {macro} {1 if val else 0}\n")
+    # Buttons vary more than anything else: the Tough has none at all (its
+    # A/B/C are touch zones), the Stick has a power key inside the PMIC,
+    # the Station has three. A portable sketch has to ask.
+    for name in ("A", "B", "C", "Pwr"):
+        a(f"#define TINYM5_HAS_BTN_{name.upper()} {1 if name in d['buttons'] else 0}\n")
     a("\n")
 
     a("// The board this sketch drives, written once so that portable code can\n")

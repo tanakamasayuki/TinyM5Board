@@ -41,7 +41,15 @@ class TinyM5BoardPowerAxp192 {
     Exten = 1 << 6,
   };
 
-  constexpr explicit TinyM5BoardPowerAxp192(uint8_t rails) : _rails(rails) {}
+  /// `ldo2mV` / `ldo3mV` are applied *before* the rails are switched on,
+  /// which is the order M5GFX uses: bringing a rail up at its reset
+  /// voltage and correcting it afterwards puts the wrong voltage on the
+  /// panel for a moment. Zero leaves a rail's voltage alone.
+  constexpr explicit TinyM5BoardPowerAxp192(uint8_t rails, uint16_t ldo2mV = 0,
+                                            uint16_t ldo3mV = 0)
+      : _rails(rails), _ldo2mV(ldo2mV), _ldo3mV(ldo3mV)
+  {
+  }
 
   /// Returns false when nothing answers as an AXP192 at 0x34. On these
   /// boards the chip is soldered on, so that is a real fault rather than
@@ -50,7 +58,9 @@ class TinyM5BoardPowerAxp192 {
   {
     _reg.attach(wire, kAddress);
     if (_reg.read8(0x03, 0xFF) != kChipId) return false;
-    _reg.bitOn(0x12, _rails);
+    if (_ldo2mV) setLdo2Millivolt(_ldo2mV);
+    if (_ldo3mV) setLdo3Millivolt(_ldo3mV);
+    if (_rails) _reg.bitOn(0x12, _rails);
     // The battery ADCs are off out of reset; without this every reading
     // comes back 0.
     _reg.write8(0x82, 0xFF);
@@ -139,11 +149,83 @@ class TinyM5BoardPowerAxp192 {
     return val;
   }
 
-  /// For the backlight classes that drive an LDO on this chip.
+  // ---- the chip's own GPIOs ----
+  //
+  // On the Core2 and the Tough these are not spare pins: IO4 is the LCD
+  // reset line and IO1 is the touch controller's. That is why those
+  // boards report `display().rst == -1` - the reset has already happened
+  // over I2C by the time a graphics library sees the panel, and there is
+  // no pin for it to pulse.
+
+  enum class Gpio : uint8_t { Io0, Io1, Io2, Io3, Io4 };
+
+  /// Configure as a push-pull output.
+  void gpioOutput(Gpio gpio)
+  {
+    switch (gpio) {
+      case Gpio::Io0: _reg.write8(0x90, 0x02, 0xF8); break;
+      case Gpio::Io1: _reg.write8(0x92, 0x02, 0xF8); break;
+      case Gpio::Io2: _reg.write8(0x93, 0x02, 0xF8); break;
+      // IO3 and IO4 share one register: bit7 turns the pair on, and two
+      // bits each select the function.
+      case Gpio::Io3: _reg.write8(0x95, 0x81, 0x7C); break;
+      case Gpio::Io4: _reg.write8(0x95, 0x84, 0x72); break;
+    }
+  }
+
+  /// Configure as an open-drain output. The Tough's touch reset needs
+  /// this rather than push-pull.
+  void gpioOpenDrain(Gpio gpio)
+  {
+    switch (gpio) {
+      case Gpio::Io0: _reg.write8(0x90, 0x00, 0xF8); break;
+      case Gpio::Io1: _reg.write8(0x92, 0x00, 0xF8); break;
+      case Gpio::Io2: _reg.write8(0x93, 0x00, 0xF8); break;
+      default: break;  // IO3 / IO4 have no open-drain mode
+    }
+  }
+
+  void gpioWrite(Gpio gpio, bool level)
+  {
+    // IO0-2 signal in 0x94, IO3-4 in 0x96.
+    const bool high = (uint8_t)gpio >= (uint8_t)Gpio::Io3;
+    const uint8_t reg = high ? 0x96 : 0x94;
+    const uint8_t bit = (uint8_t)(1u << ((uint8_t)gpio - (high ? 3 : 0)));
+    level ? _reg.bitOn(reg, bit) : _reg.bitOff(reg, bit);
+  }
+
+  /// Reset pulse on one of the chip's GPIOs, matching TinyM5::resetPulse
+  /// for a real pin.
+  void gpioResetPulse(Gpio gpio, uint16_t lowMs = 2, uint16_t settleMs = 10)
+  {
+    gpioWrite(gpio, true);
+    delay(1);
+    gpioWrite(gpio, false);
+    delay(lowMs);
+    gpioWrite(gpio, true);
+    delay(settleMs);
+  }
+
+  // ---- rail voltages ----
+  //
+  // LDO2 and LDO3 share register 0x28, one nibble each: 1.8 V plus 0.1 V
+  // per step.
+
+  void setLdo2Millivolt(uint16_t mv) { _reg.write8(0x28, (uint8_t)(step(mv) << 4), 0x0F); }
+  void setLdo3Millivolt(uint16_t mv) { _reg.write8(0x28, step(mv), 0xF0); }
+
+  static constexpr uint8_t step(uint16_t mv)
+  {
+    return mv <= 1800 ? 0 : (uint8_t)((mv - 1800) / 100 > 15 ? 15 : (mv - 1800) / 100);
+  }
+
+  /// For the backlight classes that drive a rail on this chip.
   TinyM5::I2cReg &reg() { return _reg; }
 
  private:
   TinyM5::I2cReg _reg;
   uint8_t _rails;
+  uint16_t _ldo2mV;
+  uint16_t _ldo3mV;
   bool _ok = false;
 };

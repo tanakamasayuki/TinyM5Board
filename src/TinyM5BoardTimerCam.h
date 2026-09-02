@@ -54,11 +54,11 @@ class TinyM5BoardTimerCam {
       Wire.begin(kI2cSda, kI2cScl);
       Wire1.begin(kI2cExtSda, kI2cExtScl);
     }
+    Power.begin();
     // The status LED comes up lit. Leaving it on would burn current on a
     // board that runs from a battery. (M5Unified Power_Class.cpp:612)
     pinMode(2, OUTPUT);
     digitalWrite(2, LOW);
-    Power.begin();
     return true;
   }
 
@@ -102,6 +102,11 @@ class TinyM5BoardTimerCam {
 #define TINYM5_HAS_BACKLIGHT 0
 #define TINYM5_HAS_BATTERY 1
 #define TINYM5_HAS_EXTERNAL_I2C 1
+#define TINYM5_HAS_RGB_LED 0
+#define TINYM5_HAS_BTN_A 0
+#define TINYM5_HAS_BTN_B 0
+#define TINYM5_HAS_BTN_C 0
+#define TINYM5_HAS_BTN_PWR 0
 
 // The board this sketch drives, written once so that portable code can
 // name it without naming the product.

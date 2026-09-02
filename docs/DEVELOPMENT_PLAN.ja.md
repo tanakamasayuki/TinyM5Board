@@ -10,12 +10,12 @@
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` つき |
-| ボード定義 | **6 機種** —— AtomLite / TimerCam / Capsule / StickCPlus2 / StickC / StickCPlus |
+| ボード定義 | **8 機種** —— AtomLite / TimerCam / Capsule / StickCPlus2 / StickC / StickCPlus / Station / Tough |
 | 電源 | `PowerAdc`（PMIC なし機）/ **`PowerAxp192`**。AXP2101 / M5PM1 は未着手 |
-| バックライト | `BacklightPwm`（M5GFX と同じ 9 bit 整数カーブ）/ **`BacklightAxp192`**（LDO2 電圧） |
+| バックライト | `BacklightPwm` / `BacklightAxp192<Ldo2\|Ldo3\|Dc3>`。**すべて M5GFX と同じカーブ** |
 | ボタン | `Button.h`。GPIO と **PMIC の PEK** を同じ型で扱う。click カウントは未実装 |
-| 表示 | `TinyM5::Display` を返すだけ。3 線式の表現あり |
-| `tests/begin/` | **6 機種とも通っている。** レジスタファイルの device model つき |
+| 表示 | `TinyM5::Display` を返すだけ。3 線式と **PMIC 越しリセット**（`rst == -1`）の表現あり |
+| `tests/begin/` | **8 機種とも通っている。** レジスタファイルの device model つき |
 | `examples/Hello` | 実機コアでビルド確認済み |
 | 利用者向け README | **無い。** 機種が揃ってから |
 
@@ -135,11 +135,19 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 2. ~~POWER_HOLD 1 本のボード~~ —— TimerCam / Capsule / StickCPlus2 で通した
 3. ~~AXP192~~ —— StickC / StickC Plus で通した。ドライバは Core2 / Tough /
    Station にもそのまま効く
-4. **Core2 / Tough / Station** —— AXP192 は済んでいるが、**リセットが I2C 越し**
-   （`pin_rst` を GFX に渡さず `begin()` が済ませる）で、Core2 は
-   **AXP192 / AXP2101 の実行時判別**（D5）が初めて要る
-5. **AXP2101 / M5PM1** —— M5PM1 は 9 機種に効く
-6. 残りの画面なしボード —— ピン表だけで済むものが多い
+4. ~~Station / Tough~~ —— 通した。**リセットが I2C 越し**の形
+   （`display().rst == -1`）はここで実地になった
+5. **Core2** —— **AXP2101 ドライバと、AXP192 / AXP2101 の実行時判別**（D5）が要る。
+   バックライトも DC3 / BLDO1 で分かれる
+6. **M5PM1** —— 9 機種に効く
+7. 残りの画面なしボード —— ピン表だけで済むものが多い
+
+### 2-7. 積んである宿題
+
+| | |
+| --- | --- |
+| **SD の SPI モード落とし** | Core2 / Tough / M5Stack / CoreS3 / StampPLC / PaperColor / Paper は SD が LCD と同じ SPI バスに載る。SD モードのままだとバス上で応答してパネル ID 読みを壊す。**責務としては持つと決めている**（REQUIREMENTS §4.2）が未実装 |
+| Button の click カウント | `wasClicked` / `wasDoubleClicked` / `getClickCount` が未実装 |
 
 ### 2-6. host-arduino-core への要望
 

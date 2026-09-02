@@ -50,12 +50,13 @@ class TinyM5BoardStickC {
   static constexpr bool kSharesI2cBus = false;
 
   // ---- power ----
-  // The rails this board's schematic actually uses; the chip driver
-  // knows nothing about what they feed.
+  // The rails this board's schematic actually uses, and the voltages
+  // that are not the chip's default. The driver knows which bit is
+  // which; the board knows what they feed.
   TinyM5BoardPowerAxp192 Power{TinyM5BoardPowerAxp192::Dcdc1 | TinyM5BoardPowerAxp192::Ldo2 | TinyM5BoardPowerAxp192::Ldo3 | TinyM5BoardPowerAxp192::Exten};
 
   // ---- backlight ----
-  TinyM5BoardBacklightAxp192 Backlight{Power};
+  TinyM5BoardBacklightAxp192<TinyM5::Axp192Light::Ldo2> Backlight{Power};
 
   // ---- buttons ----
   TinyM5BoardButton BtnA{[] { return digitalRead(kBtnA) == LOW; }};
@@ -138,6 +139,11 @@ class TinyM5BoardStickC {
 #define TINYM5_HAS_BACKLIGHT 1
 #define TINYM5_HAS_BATTERY 1
 #define TINYM5_HAS_EXTERNAL_I2C 1
+#define TINYM5_HAS_RGB_LED 0
+#define TINYM5_HAS_BTN_A 1
+#define TINYM5_HAS_BTN_B 1
+#define TINYM5_HAS_BTN_C 0
+#define TINYM5_HAS_BTN_PWR 1
 
 // The board this sketch drives, written once so that portable code can
 // name it without naming the product.

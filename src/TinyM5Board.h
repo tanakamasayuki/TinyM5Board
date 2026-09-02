@@ -45,6 +45,10 @@
 #include "TinyM5BoardStickC.h"
 #elif defined(TINYM5_STICKCPLUS)
 #include "TinyM5BoardStickCPlus.h"
+#elif defined(TINYM5_STATION)
+#include "TinyM5BoardStation.h"
+#elif defined(TINYM5_TOUGH)
+#include "TinyM5BoardTough.h"
 #else
 #error "TinyM5Board: no board selected. Include the header for your board (for example <TinyM5BoardAtomLite.h>), or define its macro (for example TINYM5_ATOMLITE) before including this one. The board list is in the README."
 #endif

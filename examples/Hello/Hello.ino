@@ -8,6 +8,11 @@
 // in it is board specific.
 
 #include <TinyM5BoardAtomLite.h>
+// #include <TinyM5BoardStickC.h>
+// #include <TinyM5BoardStickCPlus2.h>
+// #include <TinyM5BoardTough.h>
+// #include <TinyM5BoardCapsule.h>
+// #include <TinyM5BoardTimerCam.h>
 // The rest of the catalogue is listed in the README, one line per board.
 // Typing `#include <TinyM5Board` also makes the IDE offer every one.
 
@@ -20,9 +25,11 @@ void setup()
   if (Board.kHasExternalI2c) {
     Serial.printf("grove : sda=%d scl=%d\n", Board.kI2cExtSda, Board.kI2cExtScl);
   }
-  if (Board.kRgbLedCount) {
+#if TINYM5_HAS_RGB_LED
+  {
     Serial.printf("led   : pin=%d count=%u\n", Board.kRgbLed, Board.kRgbLedCount);
   }
+#endif
 
   // Hardware a board does not have is absent rather than stubbed out, so
   // this has to be #if and not `if constexpr`: outside a template, the
@@ -39,10 +46,21 @@ void loop()
 {
   Board.update();
 
+  // Buttons vary more than anything else on these boards. The Tough has
+  // none at all - its A/B/C are touch zones - while the StickC's power
+  // key lives inside the PMIC and never reaches a pin. Missing hardware
+  // is absent rather than stubbed out, so a portable sketch asks first.
+#if TINYM5_HAS_BTN_A
   if (Board.BtnA.wasPressed()) {
     Serial.println("BtnA pressed");
   }
   if (Board.BtnA.wasHold()) {
     Serial.println("BtnA held");
   }
+#endif
+#if TINYM5_HAS_BTN_PWR
+  if (Board.BtnPwr.wasPressed()) {
+    Serial.println("power key");
+  }
+#endif
 }
