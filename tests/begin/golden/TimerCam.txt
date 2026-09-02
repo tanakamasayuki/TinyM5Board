@@ -1,0 +1,8 @@
+--- begin() ---
+pinMode(33, OUTPUT)
+digitalWrite(33, 1)
+pinMode(2, OUTPUT)
+digitalWrite(2, 0)
+--- state ---
+i2c0: begun sda=12 scl=14 hz=100000
+i2c1: begun sda=4 scl=13 hz=100000

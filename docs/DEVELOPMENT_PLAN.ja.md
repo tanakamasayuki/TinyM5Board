@@ -4,39 +4,52 @@
 
 ## 1. 現在地
 
-**AtomLite が 1 機種、ホストのゴールデンテストまで通っている。**
+**POWER_HOLD 系 4 機種が、ホストのゴールデンテストと実機コアのビルドまで通っている。**
 
 | 項目 | 状況 |
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | 調査記録 | **あり。** [research/](research/) に事実のみ |
-| ライブラリ解決の条件 | **実測で確定**（arduino-cli 1.5.0） |
-| ボードカタログのスキーマ | **決まった**（[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md)） |
-| テスト戦略 | **決まった**（[TEST_PLAN.ja.md](TEST_PLAN.ja.md)） |
-| `tools/gen_boards.py` | **あり。** ボードヘッダ / `TinyM5Board.h` / `BoardId.h` を生成、`--check` つき |
-| `src/TinyM5Board/Common.h` | **あり。** 型・enum・`resetPulse` |
-| `src/TinyM5Board/Button.h` | **あり。** デバウンス + エッジ。click カウントは未実装 |
-| ボード定義 | **AtomLite のみ**（[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md) の全列を使う最小例） |
-| `tests/begin/` | **通っている。** ホストで `begin()` の I2C / GPIO 列を記録しゴールデン比較 |
-| `tests/common_libs/tinym5_trace/` | **あり。** バス観測ポートの記録ヘルパ |
-| `examples/Hello` | **あり。** 実機コア（`esp32:esp32:m5stack_atom`）でビルド確認済み |
+| `tools/gen_boards.py` | **あり。** ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` つき |
+| ボード定義 | **4 機種** —— AtomLite / TimerCam / Capsule / StickCPlus2 |
+| 電源 | `PowerAdc`（PMIC なし機の ADC + 分圧比）**のみ**。AXP192 / AXP2101 / M5PM1 は未着手 |
+| バックライト | `BacklightPwm`（M5GFX と同じ 9 bit の整数カーブ）**のみ** |
+| ボタン | `Button.h`。デバウンス + エッジ。click カウントは未実装 |
+| 表示 | `TinyM5::Display` を返すだけ（StickCPlus2 で実装確認） |
+| `tests/begin/` | **4 機種とも通っている** |
+| `examples/Hello` | **あり。** 実機コアでビルド確認済み |
 | `.github/workflows/tests.yml` | **あり。** `core install` を使わない構成 |
 | 利用者向け README | **無い。** 機種が揃ってから |
-| 電源チップのドライバ | **無い。** AXP192 / AXP2101 / M5PM1 とも未着手 |
 
-### 1.1 実装して分かったこと
+### 1.1 実測（arduino-esp32 3.3.11）
+
+| ボード | FQBN | フラッシュ |
+| --- | --- | --- |
+| AtomLite | `esp32:esp32:m5stack_atom` | 294,272 B |
+| TimerCam | `esp32:esp32:m5stack_stickc_plus2` (代用) | 321,624 B |
+| StickCPlus2 | `esp32:esp32:m5stack_stickc_plus2` | 335,651 B |
+| Capsule | `esp32:esp32:m5stack_capsule` | 333,241 B |
+
+大半は Arduino のベースラインと `Wire`。**ボード定義そのものは数百バイト**。
+
+### 1.2 実装して分かったこと
 
 **`if constexpr` では機能の有無を分岐できない**（D31）。テンプレートの外では
 捨てられた枝も名前解決されるので、`Board.Power` が無いボードでは
 実行されない側に書いてもコンパイルが通らない。`TINYM5_HAS_*` マクロを追加した。
 
-**ビルドフラグからは文字列しか渡せない。** pytest-embedded の
-`build_config.toml` は `-DNAME="value"` の形でしか注入できないため、
-`TINYM5_BOARD_HEADER` という computed include の入口を足した。
-結果として**入口が 3 通り**になった（直接 include / マクロ / ヘッダ名の文字列）。
+**ビルドフラグからは文字列しか渡せない。** `TINYM5_BOARD_HEADER` という
+computed include の入口を足した。入口は 3 通りになった
+（直接 include / マクロ / ヘッダ名の文字列）。
 
-**AtomLite の実測**: ESP32 でフラッシュ 294,272 B / RAM 23,548 B。
-大半は Arduino のベースラインと `Wire`。
+**pytest-embedded は `dut` がモジュールスコープで、`expect` のバッファは
+セッション共有。** ボードごとにディレクトリを分け、`expect` の文字列に
+ボード名を入れる必要がある（[TEST_PLAN.ja.md](TEST_PLAN.ja.md) §3.4）。
+生成側で守っているので踏み直すことはない。
+
+**AtomLite と TimerCam は「初期化なし」ではなかった。** AtomLite は CH552 が
+GPIO0 に 4V をかける問題への対策、TimerCam は点灯したままの LED の消灯。
+どちらも `power_on` の逃げ道（D26）が要る一点もの。
 
 ## 2. 次にやること
 
@@ -88,7 +101,7 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 
 **手で 64 機種を並べない。** 追加のたびに漏れる。
 
-### 2-4. AtomLite を通しで作る（D30）
+### 2-4. AtomLite を通しで作る（D30）—— **済**
 
 起点は **AtomLite**。画面なし・電源ハードなし・ボタン 1 つ・RGB LED 1 つで、
 骨格を通すのに最小。しかも**本命の領域**（画面なしボード 29 機種）の代表そのもの。
@@ -116,9 +129,22 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 
 最終的にはなるべく多くの機種を載せる。安い順に:
 
-1. **電源ハードを持たない画面なしボード** — ピン表だけで済む
-2. **POWER_HOLD 1 本のボード** — CoreInk / AirQ / Paper / TimerCam
-3. **AXP192 / M5PM1 を共有する機種** — チップドライバは共通、ピン割当だけ
+1. ~~電源ハードを持たない画面なしボード~~ —— AtomLite で通した
+2. ~~POWER_HOLD 1 本のボード~~ —— TimerCam / Capsule / StickCPlus2 で通した
+3. **AXP192 の 5 機種** —— StickC / StickC Plus / Core2 / Tough / Station。
+   **チップドライバが初めて要る。** `setReadHook` でチップに応答させる経路も
+   ここで初めて通る
+4. **AXP2101 / M5PM1** —— M5PM1 は 9 機種に効く
+5. 残りの画面なしボード —— ピン表だけで済むものが多い
+
+### 2-6. host-arduino-core への要望
+
+どちらも「あれば埋まる」もので、無くても進められる。
+
+| | 効果 |
+| --- | --- |
+| `Wire.begin()` のフック | I2C の初期化がゴールデンの順序に載る |
+| `analogWrite` / `ledc` のフック | **バックライトの初期化がゴールデンに載る**。TODO に「no-op stub で足りる」とあるが、フックがあると検査できる |
 
 ## 3. リポジトリ整備
 

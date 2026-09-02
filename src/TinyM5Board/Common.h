@@ -62,10 +62,15 @@ enum Init : uint8_t {
 
 /// Display particulars, handed to whatever graphics library the sketch
 /// uses. This library owns no panel driver and draws nothing.
+///
+/// There is no backlight pin here on purpose. On more than half the
+/// boards with a screen the backlight is a PMIC LDO or an expander's PWM
+/// channel rather than a pin, and `Board.Backlight` is the one way to
+/// reach all of them. Handing the pin to a graphics library as well would
+/// give the brightness two owners.
 struct Display {
   int8_t mosi, miso, sclk, dc, cs;
-  int8_t rst;        ///< -1 = begin() has already reset it; do not touch
-  int8_t backlight;  ///< -1 = not a PWM pin; use Board.Backlight
+  int8_t rst;  ///< always -1: begin() has already pulsed it. Do not touch
   uint32_t freqWrite, freqRead;
   uint16_t width, height, offsetX, offsetY;
   uint8_t rotation;

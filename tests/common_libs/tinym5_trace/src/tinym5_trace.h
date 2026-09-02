@@ -110,12 +110,24 @@ size_t onI2cRead(uint8_t addr, uint8_t *data, size_t len, bool stop, void *)
   return n;
 }
 
-/// Start recording. Call before Board.begin().
-inline void start(const char *name)
+inline const char *&name()
 {
+  static const char *n = "";
+  return n;
+}
+
+/// Start recording. Call before Board.begin().
+///
+/// The board name goes on the TEST lines because pytest-embedded shares
+/// one expect buffer across the session: a bare "TEST done" would be
+/// matched against the previous board's run and the test would read a
+/// trace that had not been written yet.
+inline void start(const char *board)
+{
+  name() = board;
   mkdir("output", 0755);
   file() = fopen("output/trace.txt", "w");
-  Serial.printf("TEST start %s\n", name);
+  Serial.printf("TEST start %s\n", board);
   HostArduino::resetPinState();
   HostArduino::setPinModeHook(onPinMode);
   HostArduino::setPinWriteHook(onPinWrite);
@@ -148,7 +160,7 @@ inline void finish()
     fclose(file());
     file() = nullptr;
   }
-  Serial.println("TEST done");
+  Serial.printf("TEST done %s\n", name());
 }
 
 }  // namespace TinyM5Trace
