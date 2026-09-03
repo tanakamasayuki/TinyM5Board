@@ -1,4 +1,4 @@
-"""begin() golden for M5StickC.
+"""begin() golden for M5StickC (StickC).
 
 One directory per board because the plugin's `dut` fixture is module
 scoped and the build follows the sketch directory: sharing one sketch

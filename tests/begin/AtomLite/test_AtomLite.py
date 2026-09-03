@@ -1,4 +1,4 @@
-"""begin() golden for M5AtomLite.
+"""begin() golden for M5AtomLite (AtomLite).
 
 One directory per board because the plugin's `dut` fixture is module
 scoped and the build follows the sketch directory: sharing one sketch

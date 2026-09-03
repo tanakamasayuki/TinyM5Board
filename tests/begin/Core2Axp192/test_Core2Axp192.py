@@ -1,4 +1,4 @@
-"""begin() golden for M5TimerCam (TimerCam).
+"""begin() golden for M5StackCore2 (Core2Axp192).
 
 One directory per board because the plugin's `dut` fixture is module
 scoped and the build follows the sketch directory: sharing one sketch
@@ -12,4 +12,4 @@ from tinym5_check import check_begin
 
 
 def test_begin(dut, request):
-    check_begin(dut, request, "TimerCam")
+    check_begin(dut, request, "Core2Axp192")

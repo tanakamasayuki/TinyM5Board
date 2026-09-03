@@ -13,11 +13,11 @@ void setup()
   Serial.begin(115200);
   TinyM5Trace::start("Tough");
 
-  // The AXP192 has to answer or begin() stops at its
-  // detection read and the rest of the trace never happens.
+  // The AXP192 has to answer or begin() stops at its detection read and
+  // the rest of the trace never happens.
   TinyM5Trace::useChip(0, 0x34, 0x03, 0x03);
-  // 0xE34 counts at 1.1 mV each == 4000 mV, so the golden shows
-  // whether the conversion is right rather than just plausible.
+  // 0xE34 counts at 1.1 mV each == 4000 mV, so the golden shows whether
+  // the conversion is right rather than just plausible.
   TinyM5Trace::model().set(0x78, 0xE3);
   TinyM5Trace::model().set(0x79, 0x04);
 

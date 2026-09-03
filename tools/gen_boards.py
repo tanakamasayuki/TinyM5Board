@@ -273,6 +273,34 @@ Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io4);
 Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
 """,
     ),
+    dict(
+        id="Core2",
+        name="M5StackCore2",
+        board_id=2,
+        family="Core",
+        soc="esp32",
+        note="Two different power chips ship under this one name: the v1.0 has\n"
+             "an AXP192 and the v1.1 an AXP2101, at the same address, and they\n"
+             "feed the panel from different rails. begin() asks which it is\n"
+             "rather than guessing - define TINYM5_CORE2_PMIC_AXP2101 (or\n"
+             "_AXP192) to skip the question and drop the other driver.\n"
+             "Its A/B/C are touch zones, not GPIOs, so only the power key is\n"
+             "here. The SD card shares the LCD's SPI bus and is not yet taken\n"
+             "out of SD mode - see docs/DEVELOPMENT_PLAN.ja.md.\n"
+             "The panel is an ILI9342C or an ILI9342E depending on the unit,\n"
+             "which is read from the touch controller's firmware id - a\n"
+             "graphics library's job, so no panel type is reported here.",
+        i2c_int=(21, 22),
+        i2c_ext=(32, 33),
+        rgb_led=(25, 1),
+        buttons={"Pwr": "pek"},
+        pmic="core2",
+        backlight=("core2",),
+        display=dict(bus="spi2", mosi=23, miso=38, sclk=18, dc=15, cs=5, rst=-1,
+                     freq_write=40000000, freq_read=16000000,
+                     w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
+                     three_wire=True),
+    ),
 ]
 
 
@@ -285,6 +313,13 @@ OPTIONAL = dict(note="", i2c_ext=None, power_hold=None, rgb_led=None,
                 backlight=None, display=None, power_on="")
 
 # Rail names as a board header spells them, mapped to the driver's enum.
+# The class that owns `Power` for each `pmic` value. A PEK button reads
+# through it, so it has to be nameable from the generated header.
+POWER_CLASS = {
+    "adc": "TinyM5BoardPowerAdc",
+    "axp192": "TinyM5BoardPowerAxp192",
+    "core2": "TinyM5BoardPowerCore2",
+}
 RAIL_ENUM = {"axp192": "TinyM5BoardPowerAxp192"}
 
 
@@ -342,11 +377,15 @@ def emit_board(entry):
         a('#include "TinyM5Board/PowerAdc.h"\n')
     elif b["pmic"] == "axp192":
         a('#include "TinyM5Board/PowerAxp192.h"\n')
+    elif b["pmic"] == "core2":
+        a('#include "TinyM5Board/PowerCore2.h"\n')
     if b["backlight"]:
         if b["backlight"][0] == "pwm":
             a('#include "TinyM5Board/BacklightPwm.h"\n')
         elif b["backlight"][0].startswith("axp192_"):
             a('#include "TinyM5Board/BacklightAxp192.h"\n')
+        elif b["backlight"][0] == "core2":
+            a('#include "TinyM5Board/BacklightCore2.h"\n')
     a("\n")
 
     a(f"class {cls} {{\n public:\n")
@@ -404,6 +443,12 @@ def emit_board(entry):
         a("  // that are not the chip's default. The driver knows which bit is\n")
         a("  // which; the board knows what they feed.\n")
         a(f"  {cls_p} Power{{{args}}};\n\n")
+    elif b["pmic"] == "core2":
+        a("  // ---- power ----\n")
+        a("  // Two chips are possible under this one product name, so the\n")
+        a("  // bring-up, the panel reset and the backlight all live behind\n")
+        a("  // this one object. It asks the chip which it is.\n")
+        a("  TinyM5BoardPowerCore2 Power;\n\n")
     if b["backlight"]:
         a("  // ---- backlight ----\n")
         if b["backlight"][0] == "pwm":
@@ -412,6 +457,8 @@ def emit_board(entry):
         elif b["backlight"][0].startswith("axp192_"):
             ch = b["backlight"][0].split("_")[1].capitalize()
             a(f"  TinyM5BoardBacklightAxp192<TinyM5::Axp192Light::{ch}> Backlight{{Power}};\n\n")
+        elif b["backlight"][0] == "core2":
+            a("  TinyM5BoardBacklightCore2 Backlight{Power};\n\n")
     if b["buttons"]:
         a("  // ---- buttons ----\n")
         for name, spec in b["buttons"].items():
@@ -420,7 +467,7 @@ def emit_board(entry):
                 a("  // I2C, rate limited so update() does not flood the bus.\n")
                 a(f"  TinyM5BoardButton Btn{name}{{\n")
                 a("      [](void *p) {\n")
-                a(f"        return static_cast<{RAIL_ENUM[b['pmic']]} *>(p)->getKeyState() != 0;\n")
+                a(f"        return static_cast<{POWER_CLASS[b['pmic']]} *>(p)->getKeyState() != 0;\n")
                 a("      },\n")
                 a("      &Power, true};\n")
                 continue
@@ -449,6 +496,11 @@ def emit_board(entry):
         a("    // The chip is soldered on, so no answer is a real fault. The\n")
         a("    // rails have to be up before the panel is taken out of reset.\n")
         a("    const bool ok = Power.begin(Wire);\n")
+    elif b["pmic"] == "core2":
+        a("    // Asks the chip which of the two it is, then runs that one's\n")
+        a("    // bring-up - including the panel reset, which is a rail on one\n")
+        a("    // chip and a chip GPIO on the other.\n")
+        a("    const bool ok = Power.begin(Wire);\n")
     if b["power_on"]:
         # The catalogue holds the snippet unindented; place it in the body here
         # so that a hand-written escape hatch does not have to know about
@@ -459,7 +511,8 @@ def emit_board(entry):
         a(f"    TinyM5::resetPulse({b['display']['rst']});\n")
     if b["backlight"]:
         a("    Backlight.begin();\n")
-    a("    return ok;\n  }\n\n" if b["pmic"] == "axp192" else "    return true;\n  }\n\n")
+    a("    return ok;\n  }\n\n" if b["pmic"] in ("axp192", "core2")
+      else "    return true;\n  }\n\n")
 
     if b["power_hold"] is not None:
         a("  /// Latch the power rail on. Called by begin(), and safe to call\n")
@@ -601,30 +654,57 @@ default_profile: host
 # What has to answer on the bus for a board's begin() to get past its
 # chip detection. Without this the driver bails out and the trace stops
 # at the first read.
-CHIP_MODEL = {
-    "axp192": ("0x34", "0x03", "0x03"),
-}
+# What has to answer on the bus, and what a known battery reading looks
+# like in that chip's registers.
+AXP192_MODEL = ("""\
+// The AXP192 has to answer or begin() stops at its detection read and
+// the rest of the trace never happens.
+TinyM5Trace::useChip(0, 0x34, 0x03, 0x03);
+// 0xE34 counts at 1.1 mV each == 4000 mV, so the golden shows whether
+// the conversion is right rather than just plausible.
+TinyM5Trace::model().set(0x78, 0xE3);
+TinyM5Trace::model().set(0x79, 0x04);
+""")
+
+AXP2101_MODEL = ("""\
+// The AXP2101 answers instead, which is the other half of the branch
+// begin() takes. Same address, different id.
+TinyM5Trace::useChip(0, 0x34, 0x03, 0x4A);
+// This chip reports millivolts directly (0x0FA0 == 4000) and has a real
+// fuel gauge in 0xA4, so the level is read rather than estimated.
+TinyM5Trace::model().set(0x34, 0x0F);
+TinyM5Trace::model().set(0x35, 0xA0);
+TinyM5Trace::model().set(0xA4, 87);
+""")
 
 
-def emit_sketch(b):
+def variants(b):
+    """One test per chip a board could be carrying.
+
+    A board whose power chip is only known at runtime needs both branches
+    exercised, and the host is the only place both can be: nobody owns
+    two Core2s of different vintage.
+    """
     d = derive(b)
-    chip = CHIP_MODEL.get(d["pmic"])
-    model_include = '#include <tinym5_model_i2c.h>\n' if chip else ""
-    model_setup = ""
-    if chip:
-        addr, reg, val = chip
-        model_setup = (f"\n  // The {d['pmic'].upper()} has to answer or begin() stops at its\n"
-                       f"  // detection read and the rest of the trace never happens.\n"
-                       f"  TinyM5Trace::useChip(0, {addr}, {reg}, {val});\n"
-                       "  // 0xE34 counts at 1.1 mV each == 4000 mV, so the golden shows\n"
-                       "  // whether the conversion is right rather than just plausible.\n"
-                       "  TinyM5Trace::model().set(0x78, 0xE3);\n"
-                       "  TinyM5Trace::model().set(0x79, 0x04);\n")
-    elif d["pmic"] == "adc":
+    if d["pmic"] == "core2":
+        return [("Axp192", AXP192_MODEL), ("Axp2101", AXP2101_MODEL)]
+    if d["pmic"] == "axp192":
+        return [("", AXP192_MODEL)]
+    if d["pmic"] == "adc":
         pin = d["bat_adc"][0]
-        model_setup = (f"\n  // 2000 mV at the pin, so the golden shows what this board's\n"
-                       f"  // divider ratio makes of it.\n"
-                       f"  HostArduino::setAnalogMilliVolts({pin}, 2000);\n")
+        return [("", f"// 2000 mV at the pin, so the golden shows what this board's\n"
+                     f"// divider ratio makes of it.\n"
+                     f"HostArduino::setAnalogMilliVolts({pin}, 2000);\n")]
+    return [("", "")]
+
+
+def emit_sketch(b, model, name):
+    d = derive(b)
+    model_include = '#include <tinym5_model_i2c.h>\n' if "useChip" in model else ""
+    model_setup = ""
+    if model:
+        model_setup = "\n" + "".join(f"  {ln}\n" if ln else "\n"
+                                     for ln in model.rstrip("\n").split("\n"))
     return f'''// What Board.begin() does on the {b["name"]}, recorded for the golden.
 //
 // The include is the spelling the README recommends, so the test walks
@@ -637,7 +717,7 @@ def emit_sketch(b):
 void setup()
 {{
   Serial.begin(115200);
-  TinyM5Trace::start("{b["id"]}");
+  TinyM5Trace::start("{name}");
 {model_setup}
   Board.begin();
 
@@ -648,8 +728,8 @@ void loop() {{ delay(10); }}
 '''
 
 
-def emit_test(b):
-    return f'''"""begin() golden for {b["name"]}.
+def emit_test(b, name):
+    return f'''"""begin() golden for {b["name"]} ({name}).
 
 One directory per board because the plugin's `dut` fixture is module
 scoped and the build follows the sketch directory: sharing one sketch
@@ -663,7 +743,7 @@ from tinym5_check import check_begin
 
 
 def test_begin(dut, request):
-    check_begin(dut, request, "{b["id"]}")
+    check_begin(dut, request, "{name}")
 '''
 
 
@@ -672,10 +752,12 @@ def outputs():
              SRC / "TinyM5Board.h": emit_entry()}
     for b in BOARDS:
         files[SRC / f"TinyM5Board{b['id']}.h"] = emit_board(b)
-        d = TESTS / "begin" / b["id"]
-        files[d / f"{b['id']}.ino"] = emit_sketch(b)
-        files[d / "sketch.yaml"] = SKETCH_YAML
-        files[d / f"test_{b['id']}.py"] = emit_test(b)
+        for suffix, model in variants(b):
+            name = b["id"] + suffix
+            d = TESTS / "begin" / name
+            files[d / f"{name}.ino"] = emit_sketch(b, model, name)
+            files[d / "sketch.yaml"] = SKETCH_YAML
+            files[d / f"test_{name}.py"] = emit_test(b, name)
     return files
 
 

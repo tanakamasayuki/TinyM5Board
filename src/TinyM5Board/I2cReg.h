@@ -64,6 +64,15 @@ class I2cReg {
     return ((uint16_t)v[0] << 5) | (v[1] & 0x1F);
   }
 
+  /// 14-bit reading: six bits of the high byte, then all of the next.
+  /// The AXP2101 reports voltages this way, already in mV.
+  uint16_t read14(uint8_t reg)
+  {
+    uint8_t v[2] = {0, 0};
+    if (!read(reg, v, 2)) return 0;
+    return (uint16_t)(((v[0] & 0x3F) << 8) | v[1]);
+  }
+
   bool write8(uint8_t reg, uint8_t data)
   {
     if (!_wire) return false;

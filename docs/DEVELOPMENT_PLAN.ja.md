@@ -4,54 +4,60 @@
 
 ## 1. 現在地
 
-**6 機種。POWER_HOLD 系と AXP192 系が、ホストのゴールデンと実機コアのビルドまで通っている。**
+**9 機種。AXP192 / AXP2101 の両系統が、ホストのゴールデンと実機コアのビルドまで通っている。**
 
 | 項目 | 状況 |
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
-| `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` つき |
-| ボード定義 | **8 機種** —— AtomLite / TimerCam / Capsule / StickCPlus2 / StickC / StickCPlus / Station / Tough |
-| 電源 | `PowerAdc`（PMIC なし機）/ **`PowerAxp192`**。AXP2101 / M5PM1 は未着手 |
-| バックライト | `BacklightPwm` / `BacklightAxp192<Ldo2\|Ldo3\|Dc3>`。**すべて M5GFX と同じカーブ** |
-| ボタン | `Button.h`。GPIO と **PMIC の PEK** を同じ型で扱う。click カウントは未実装 |
-| 表示 | `TinyM5::Display` を返すだけ。3 線式と **PMIC 越しリセット**（`rst == -1`）の表現あり |
-| `tests/begin/` | **8 機種とも通っている。** レジスタファイルの device model つき |
+| `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / **テスト一式**を生成、`--check` つき |
+| ボード定義 | **9 機種** —— AtomLite / TimerCam / Capsule / StickCPlus2 / StickC / StickCPlus / Station / Tough / **Core2** |
+| 電源 | `PowerAdc` / `PowerAxp192` / **`PowerAxp2101`** / **`PowerCore2`**（二択の判別）。M5PM1 は未着手 |
+| バックライト | PWM / AXP192 の Ldo2・Ldo3・Dc3 / Core2（DC3 と BLDO1）。**すべて M5GFX と同じカーブ** |
+| ボタン | GPIO と PMIC の PEK を同じ型で。click カウントは未実装 |
+| 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセット（`rst == -1`）の表現あり |
+| `tests/begin/` | **10 スケッチ通過。** Core2 は**チップ 2 種で 2 本** |
 | `examples/Hello` | 実機コアでビルド確認済み |
 | 利用者向け README | **無い。** 機種が揃ってから |
 
 ### 1.1 実測（arduino-esp32 3.3.11 / 同一スケッチ）
 
-| ボード | フラッシュ | 備考 |
-| --- | --- | --- |
-| AtomLite | 312,708 B | 電源ハードなし |
-| **StickC** | **314,000 B** | **AXP192 ドライバ + バックライト込みで +1,292 B** |
-| StickCPlus | 314,016 B | |
+| 構成 | フラッシュ |
+| --- | --- |
+| AtomLite（電源ハードなし） | 312,708 B |
+| Core2（**両チップをリンク**） | 313,524 B |
+| Core2（`TINYM5_CORE2_PMIC_AXP192` で固定） | 313,044 B |
+| Core2（`TINYM5_CORE2_PMIC_AXP2101` で固定） | 312,748 B |
+| StickC | 314,144 B |
 
-大半は Arduino のベースラインと `Wire`。**チップドライバ 1 個が 1 KB強**で、
-使わないボードには 1 バイトも入らない。
+**二択のまま持つ代金は 480〜776 バイト。** 4 MB のボードで、
+これを惜しんで筐体を開けさせる理由はない。
 
 ### 1.2 実装して分かったこと
 
-**`if constexpr` では機能の有無を分岐できない**（D31）。テンプレートの外では
-捨てられた枝も名前解決される。`TINYM5_HAS_*` マクロを追加した。
+**`if constexpr` では機能の有無を分岐できない**（D31）。`TINYM5_HAS_*` マクロを出す。
+ボタンは**ボード間で一番ばらつく**（Tough は 0 個、StickC は PMIC の中、Station は 3 個）
+ので `TINYM5_HAS_BTN_*` も要る。
 
-**ゴールデンは順序だけでは足りない。** StickC と StickC Plus は
-**電源手順もピンも完全に同一**で、違うのはパネルだけ。バス上のやりとりを
-比べるだけでは 2 機種の区別がつかないので、`--- board ---` と
-`--- display ---` としてカタログの中身もゴールデンに入れた
-（[TEST_PLAN.ja.md](TEST_PLAN.ja.md) §3.2.1）。
+**ゴールデンは順序だけでは足りない**（TEST_PLAN §3.2.2）。StickC と StickC Plus は
+電源手順もピンも同一で、違うのはパネルだけ。カタログの中身もゴールデンに入れている。
 
-**チップに名乗らせないとテストが 1 行も進まない。** 検出で止まるため。
-レジスタファイルの device model を置いた。PMIC の模倣ではなく、
-**分岐を走らせるための最小限**。
+**読み出しは差し込んで検算する**（TEST_PLAN §3.2.1）。分圧比も 12 bit の組み立ても、
+間違っていても「それらしい電圧」が出るだけで落ちない。
 
-**pytest-embedded は `dut` がモジュールスコープ、`expect` のバッファは
-セッション共有。** ボードごとにディレクトリを分け、`expect` の文字列に
-ボード名を入れる（[TEST_PLAN.ja.md](TEST_PLAN.ja.md) §3.4）。生成側で守っている。
+**`power_on` は `Power.begin()` の後**（D32）、**レール電圧はレール投入の前**（D33）。
+どちらもゴールデンが見つけた。
 
-**「初期化なし」のボードは無かった。** AtomLite は CH552 が GPIO0 に 4V を
-かける問題への対策、TimerCam は点灯したままの LED の消灯。
-どちらも `power_on` の逃げ道（D26）が要る一点もの。
+**二択の判別は上位で 1 回だけ読む。** 各ドライバに順番に `probe()` させると
+同じレジスタを 2 回読み、**実機がやらない「失敗した検出」がトレースに残る**。
+
+**pytest-embedded は `dut` がモジュールスコープ、`expect` のバッファはセッション共有**
+（TEST_PLAN §3.4）。生成側で守っている。
+
+### 1.3 気になり始めていること
+
+`tests/begin` の実行が **10 スケッチで 5〜8 分**。1 スケッチあたりビルドと実行で約 30 秒。
+機種が増えるほど線形に伸びるので、**60 機種では 30 分を超える。**
+CI では群ごとに分けるか、ビルドを並列にするかの判断がいずれ要る。
 
 ## 2. 次にやること
 
@@ -137,10 +143,11 @@ Core2 の PMIC 判別のような分岐も両方通せる。
    Station にもそのまま効く
 4. ~~Station / Tough~~ —— 通した。**リセットが I2C 越し**の形
    （`display().rst == -1`）はここで実地になった
-5. **Core2** —— **AXP2101 ドライバと、AXP192 / AXP2101 の実行時判別**（D5）が要る。
-   バックライトも DC3 / BLDO1 で分かれる
-6. **M5PM1** —— 9 機種に効く
-7. 残りの画面なしボード —— ピン表だけで済むものが多い
+5. ~~Core2~~ —— 通した。**二択の判別（D5）は両分岐ともホストで検証済み**
+6. **M5PM1** —— 9 機種に効く。StickS3 / StopWatch / PaperMono / ChainCaptain /
+   PaperColor / PaperDIY / CoreP4X / ToughC5 / CoreMatrix
+7. **CoreS3 系** —— AXP2101 は済んでいるが AW9523B（IO エキスパンダ）が要る
+8. 残りの画面なしボード —— ピン表だけで済むものが多い
 
 ### 2-7. 積んである宿題
 

@@ -1,4 +1,4 @@
-"""begin() golden for M5Station.
+"""begin() golden for M5Station (Station).
 
 One directory per board because the plugin's `dut` fixture is module
 scoped and the build follows the sketch directory: sharing one sketch

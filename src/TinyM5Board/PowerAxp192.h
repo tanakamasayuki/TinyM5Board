@@ -54,10 +54,31 @@ class TinyM5BoardPowerAxp192 {
   /// Returns false when nothing answers as an AXP192 at 0x34. On these
   /// boards the chip is soldered on, so that is a real fault rather than
   /// a missing option.
+  /// Attach without touching anything. A board that could have either
+  /// chip asks first and only initializes the one that answered.
+  bool probe(TwoWire &wire)
+  {
+    attach(wire);
+    return _reg.read8(0x03, 0xFF) == kChipId;
+  }
+
+  /// Point at the bus without reading anything. For a caller that has
+  /// already identified the chip and does not want a second read of the
+  /// same register showing up in the trace.
+  void attach(TwoWire &wire) { _reg.attach(wire, kAddress); }
+
   bool begin(TwoWire &wire)
   {
-    _reg.attach(wire, kAddress);
-    if (_reg.read8(0x03, 0xFF) != kChipId) return false;
+    if (!probe(wire)) return false;
+    init();
+    return true;
+  }
+
+  /// The setup that follows a successful probe. Split out so a board that
+  /// had to ask which chip it has does not pay for a second detection
+  /// read - the trace then shows one, which is what a real bring-up does.
+  void init()
+  {
     if (_ldo2mV) setLdo2Millivolt(_ldo2mV);
     if (_ldo3mV) setLdo3Millivolt(_ldo3mV);
     if (_rails) _reg.bitOn(0x12, _rails);
@@ -65,7 +86,6 @@ class TinyM5BoardPowerAxp192 {
     // comes back 0.
     _reg.write8(0x82, 0xFF);
     _ok = true;
-    return true;
   }
 
   bool isPresent() const { return _ok; }

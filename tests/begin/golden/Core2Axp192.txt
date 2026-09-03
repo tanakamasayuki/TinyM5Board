@@ -1,0 +1,44 @@
+--- begin() ---
+i2c0 begin sda=21 scl=22 hz=100000
+i2c1 begin sda=32 scl=33 hz=100000
+i2c0 write 0x34 [03] (no stop)
+i2c0 read  0x34 1 -> [03]
+i2c0 write 0x34 [82 FF]
+i2c0 write 0x34 [28] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [28 F0]
+i2c0 write 0x34 [12] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [12 04]
+i2c0 write 0x34 [95] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [95 84]
+i2c0 write 0x34 [96] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [96 02]
+i2c0 write 0x34 [96] (no stop)
+i2c0 read  0x34 1 -> [02]
+i2c0 write 0x34 [96 00]
+i2c0 write 0x34 [96] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [96 02]
+i2c0 write 0x34 [12] (no stop)
+i2c0 read  0x34 1 -> [04]
+i2c0 write 0x34 [12 06]
+i2c0 write 0x34 [27] (no stop)
+i2c0 read  0x34 1 -> [00]
+i2c0 write 0x34 [27 58]
+--- board ---
+name=M5StackCore2 id=2
+pins i2c=21/22 ext=32/33 led=25/1 hold=-1
+has display=1 backlight=1 battery=1 extI2c=1 shared=0
+--- display ---
+spi mosi=23 miso=38 sclk=18 dc=15 cs=5 rst=-1 3wire=1
+freq write=40000000 read=16000000
+panel 320x240 offset=0,0 rotation=3 invert=1
+--- battery ---
+i2c0 write 0x34 [78] (no stop)
+i2c0 read  0x34 2 -> [E3 04]
+i2c0 write 0x34 [78] (no stop)
+i2c0 read  0x34 2 -> [E3 04]
+mV=3999 level=87
