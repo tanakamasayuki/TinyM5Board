@@ -10,12 +10,13 @@
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **10 機種** —— AtomLite / TimerCam / Capsule / StickC / StickCPlus / StickCPlus2 / **StickS3** / Station / Tough / Core2 |
-| 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / **`PowerM5pm1`** / `PowerCore2`（二択の判別） |
-| バックライト | PWM / AXP192 の Ldo2・Ldo3・Dc3 / Core2（DC3 と BLDO1）。**すべて M5GFX と同じカーブ** |
+| ボード定義 | **11 機種** —— AtomLite / TimerCam / Capsule / StickC / StickCPlus / StickCPlus2 / StickS3 / Station / Tough / Core2 / **ChainCaptain** |
+| 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
+| IO エキスパンダ | **`IoExpanderM5ioe1`**。AW9523B / PI4IOE5V6408 は未着手 |
+| バックライト | PWM / AXP192 の Ldo2・Ldo3・Dc3 / Core2 / **M5IOE1 の PWM**。**すべて M5GFX と同じカーブ** |
 | ボタン | GPIO と PMIC の電源キーを同じ型で。click カウントは未実装 |
 | 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセットの表現あり |
-| `tests/begin/` | **11 スケッチ通過。群ごとのディレクトリ**で、CI の matrix 軸もこれ |
+| `tests/begin/` | **12 スケッチ通過。群ごとのディレクトリ**で、CI の matrix 軸もこれ。**1 バスに複数チップ**のモデルに対応 |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成 |
 | 利用者向け README | **無い。** 機種が揃ってから |
 
@@ -28,6 +29,7 @@
 | Core2（片方に固定） | 312,748〜313,044 B |
 | StickC（AXP192） | 314,144 B |
 | StickS3（M5PM1 / ESP32-S3） | 332,736 B |
+| ChainCaptain（M5PM1 + M5IOE1 / ESP32-S3） | 322,017 B |
 
 **二択のまま持つ代金は 480〜776 バイト。**
 
@@ -141,8 +143,9 @@ Core2 の PMIC 判別のような分岐も両方通せる。
    （`display().rst == -1`）はここで実地になった
 5. ~~Core2~~ —— 通した。**二択の判別（D5）は両分岐ともホストで検証済み**
 6. ~~M5PM1~~ —— ドライバは書けた。StickS3 で通した
-7. **M5IOE1 を使う機種** —— StopWatch / PaperMono / ChainCaptain / CoreP4X /
-   ToughC5 / CoreMatrix。M5PM1 は済んでいるが **IO エキスパンダが要る**
+7. ~~M5IOE1~~ —— ドライバは書けた。ChainCaptain で通した。
+   **同じ 2 チップ構成の StopWatch / PaperMono / CoreP4X / ToughC5 / CoreMatrix は
+   ピン割当だけ**（ただし表示バスが AMOLED QSPI / EPD / MIPI-DSI / LED マトリクスと様々）
 8. **CoreS3 系** —— AXP2101 は済んでいるが AW9523B が要る
 9. **PI4IOE5V6408** —— StampPLC / Tab5 / Tab5X / NessoN1 / UnitC6L
 10. 残りの画面なしボード —— ピン表だけで済むものが多い

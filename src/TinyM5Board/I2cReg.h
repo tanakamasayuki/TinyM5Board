@@ -82,6 +82,17 @@ class I2cReg {
     return _wire->endTransmission() == 0;
   }
 
+  /// Several bytes from one starting register. The expanders take their
+  /// 16-bit values this way, in one transaction.
+  bool write(uint8_t reg, const uint8_t *data, size_t len)
+  {
+    if (!_wire) return false;
+    _wire->beginTransmission(_addr);
+    _wire->write(reg);
+    _wire->write(data, len);
+    return _wire->endTransmission() == 0;
+  }
+
   /// (current & mask) | data. Costs a read; prefer write8 when the whole
   /// byte is known.
   bool write8(uint8_t reg, uint8_t data, uint8_t mask)

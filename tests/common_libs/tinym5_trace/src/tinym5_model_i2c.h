@@ -58,31 +58,59 @@ class RegFile {
   uint8_t _pointer = 0;
 };
 
-/// The one model on the bus for this sketch. One is enough so far; a
-/// board with two chips will need this to become a small list.
-inline RegFile &model()
+/// The chips on the bus for this sketch. Several boards carry two - a
+/// PMIC and an I/O expander at different addresses - and a bring-up that
+/// talks to both has to find both.
+constexpr uint8_t kMaxChips = 4;
+
+inline RegFile *chips()
 {
-  static RegFile m;
-  return m;
+  static RegFile c[kMaxChips];
+  return c;
+}
+
+inline uint8_t &chipCount()
+{
+  static uint8_t n = 0;
+  return n;
 }
 
 inline uint8_t modelWrite(uint8_t bus, uint8_t addr, const uint8_t *data, size_t len)
 {
-  return model().onWrite(bus, addr, data, len);
+  for (uint8_t i = 0; i < chipCount(); ++i) {
+    if (chips()[i].onWrite(bus, addr, data, len) == 0) return 0;
+  }
+  return 2;  // nobody at this address
 }
 
 inline size_t modelRead(uint8_t bus, uint8_t addr, uint8_t *data, size_t len)
 {
-  return model().onRead(bus, addr, data, len);
+  for (uint8_t i = 0; i < chipCount(); ++i) {
+    const size_t n = chips()[i].onRead(bus, addr, data, len);
+    if (n) return n;
+  }
+  return 0;
 }
 
-/// Put a chip on the bus that identifies itself through `idReg`.
-inline void useChip(uint8_t bus, uint8_t addr, uint8_t idReg, uint8_t idValue)
+/// Add a chip that identifies itself through `idReg`.
+inline RegFile &addChip(uint8_t bus, uint8_t addr, uint8_t idReg, uint8_t idValue)
 {
-  model().reset(bus, addr);
-  model().set(idReg, idValue);
+  RegFile &c = chips()[chipCount()++];
+  c.reset(bus, addr);
+  c.set(idReg, idValue);
   device().onWrite = modelWrite;
   device().onRead = modelRead;
+  return c;
+}
+
+/// The first chip. Most sketches have one and want to seed its registers.
+inline RegFile &model() { return chips()[0]; }
+
+/// Put a single chip on the bus, replacing anything already there.
+inline void useChip(uint8_t bus, uint8_t addr, uint8_t idReg, uint8_t idValue)
+{
+  chipCount() = 0;
+  addChip(bus, addr, idReg, idValue);
 }
 
 }  // namespace TinyM5Trace

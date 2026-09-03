@@ -1,0 +1,58 @@
+--- begin() ---
+i2c0 begin sda=3 scl=2 hz=100000
+i2c1 begin sda=7 scl=6 hz=100000
+pinMode(1, INPUT_PULLUP)
+pinMode(4, INPUT_PULLUP)
+pinMode(5, INPUT_PULLUP)
+i2c0 write 0x6E [00] (no stop)
+i2c0 read  0x6E 4 -> [50 00 00 00]
+i2c0 write 0x6E [09 00]
+i2c0 write 0x6E [0A 00]
+i2c0 write 0x4F [00] (no stop)
+i2c0 read  0x4F 2 -> [01 00]
+i2c0 write 0x4F [23 00]
+i2c0 write 0x4F [14] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [14 00]
+i2c0 write 0x4F [04] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [04 08]
+i2c0 write 0x4F [06] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [06 08]
+i2c0 write 0x4F [13] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [13 00]
+i2c0 write 0x4F [03] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [03 01]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [05 00]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [05 01]
+pinMode(21, OUTPUT)
+digitalWrite(21, 0)
+i2c0 write 0x4F [14] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [14 00]
+i2c0 write 0x4F [04] (no stop)
+i2c0 read  0x4F 1 -> [08]
+i2c0 write 0x4F [04 0C]
+i2c0 write 0x4F [25 E8 03]
+i2c0 write 0x4F [1F 08 84]
+--- board ---
+name=M5ChainCaptain id=32
+pins i2c=3/2 ext=7/6 led=-1/0 hold=-1
+has display=1 backlight=1 battery=1 extI2c=1 shared=0
+--- display ---
+spi mosi=16 miso=-1 sclk=15 dc=46 cs=45 rst=-1 3wire=1
+freq write=40000000 read=16000000
+panel 240x240 offset=0,0 rotation=2 invert=1
+--- battery ---
+i2c0 write 0x6E [22] (no stop)
+i2c0 read  0x6E 2 -> [A0 0F]
+i2c0 write 0x6E [22] (no stop)
+i2c0 read  0x6E 2 -> [A0 0F]
+mV=4000 level=87

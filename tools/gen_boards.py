@@ -330,6 +330,41 @@ Power.gpioEnableRail(TinyM5BoardPowerM5pm1::Gpio::Io2);
 delay(100);
 """,
     ),
+    dict(
+        id="ChainCaptain",
+        name="M5ChainCaptain",
+        board_id=32,
+        family="Core",
+        soc="esp32s3",
+        note="Two M5Stack chips side by side: an M5PM1 for power and an M5IOE1\n"
+             "for everything the panel needs. Its supply is IO12 and its reset\n"
+             "is IO1, both on the expander, so no GPIO on the SoC touches the\n"
+             "screen at all.\n"
+             "Both chips sleep on an idle bus and keep that setting across a\n"
+             "power cycle, which is why begin() clears it on each of them.\n"
+             "M5GFX also requires OPI-PSRAM here, for its own framebuffer; this\n"
+             "library allocates nothing and does not care.",
+        i2c_int=(3, 2),
+        i2c_ext=(7, 6),
+        buttons={"A": 1, "B": 4, "C": 5, "Pwr": "pek"},
+        pmic="m5pm1",
+        io_expander="m5ioe1",
+        backlight=("m5ioe1_pwm", "Ch3", "Io11", 1000),
+        display=dict(bus="spi2", mosi=16, miso=-1, sclk=15, dc=46, cs=45, rst=-1,
+                     freq_write=40000000, freq_read=16000000,
+                     w=240, h=240, ox=0, oy=0, rotation=2, invert=True,
+                     three_wire=True),
+        power_on="""\
+// IO12 switches the panel's supply and IO1 is its reset line. Neither is
+// a pin on the SoC. (M5GFX.cpp, the ChainCaptain branch)
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io12);
+Io.resetPulse(TinyM5BoardIoExpanderM5ioe1::Io::Io1);
+// The audio amplifier comes up enabled and pops. Silence it here; making
+// it play is the sketch's business, not the board's.
+pinMode(21, OUTPUT);
+digitalWrite(21, LOW);
+""",
+    ),
 ]
 
 
@@ -339,7 +374,7 @@ delay(100);
 # hardware", which is also what the kHas* flags are derived from.
 OPTIONAL = dict(note="", i2c_ext=None, power_hold=None, rgb_led=None,
                 buttons={}, pmic=None, bat_adc=None, rails=(), rail_mv={},
-                backlight=None, display=None, power_on="")
+                io_expander=None, backlight=None, display=None, power_on="")
 
 # Rail names as a board header spells them, mapped to the driver's enum.
 # The class that owns `Power` for each `pmic` value. A PEK button reads
@@ -411,6 +446,8 @@ def emit_board(entry):
         a('#include "TinyM5Board/PowerCore2.h"\n')
     elif b["pmic"] == "m5pm1":
         a('#include "TinyM5Board/PowerM5pm1.h"\n')
+    if b["io_expander"] == "m5ioe1":
+        a('#include "TinyM5Board/IoExpanderM5ioe1.h"\n')
     if b["backlight"]:
         if b["backlight"][0] == "pwm":
             a('#include "TinyM5Board/BacklightPwm.h"\n')
@@ -418,6 +455,8 @@ def emit_board(entry):
             a('#include "TinyM5Board/BacklightAxp192.h"\n')
         elif b["backlight"][0] == "core2":
             a('#include "TinyM5Board/BacklightCore2.h"\n')
+        elif b["backlight"][0] == "m5ioe1_pwm":
+            a('#include "TinyM5Board/BacklightM5ioe1.h"\n')
     a("\n")
 
     a(f"class {cls} {{\n public:\n")
@@ -485,6 +524,11 @@ def emit_board(entry):
         a("  // bring-up, the panel reset and the backlight all live behind\n")
         a("  // this one object. It asks the chip which it is.\n")
         a("  TinyM5BoardPowerCore2 Power;\n\n")
+    if b["io_expander"] == "m5ioe1":
+        a("  // ---- I/O expander ----\n")
+        a("  // Not spare pins: the panel's supply, its reset line and the\n")
+        a("  // backlight all live on this chip.\n")
+        a("  TinyM5BoardIoExpanderM5ioe1 Io;\n\n")
     if b["backlight"]:
         a("  // ---- backlight ----\n")
         if b["backlight"][0] == "pwm":
@@ -495,6 +539,11 @@ def emit_board(entry):
             a(f"  TinyM5BoardBacklightAxp192<TinyM5::Axp192Light::{ch}> Backlight{{Power}};\n\n")
         elif b["backlight"][0] == "core2":
             a("  TinyM5BoardBacklightCore2 Backlight{Power};\n\n")
+        elif b["backlight"][0] == "m5ioe1_pwm":
+            _, ch, pin, hz = b["backlight"]
+            a(f"  TinyM5BoardBacklightM5ioe1 Backlight{{\n"
+              f"      Io, TinyM5BoardIoExpanderM5ioe1::Pwm::{ch},\n"
+              f"      TinyM5BoardIoExpanderM5ioe1::Io::{pin}, {hz}}};\n\n")
     if b["buttons"]:
         a("  // ---- buttons ----\n")
         for name, spec in b["buttons"].items():
@@ -542,6 +591,9 @@ def emit_board(entry):
         a("    // bring-up - including the panel reset, which is a rail on one\n")
         a("    // chip and a chip GPIO on the other.\n")
         a("    const bool ok = Power.begin(Wire);\n")
+    if b["io_expander"] == "m5ioe1":
+        a("    // Same idle-sleep trap as the PMIC, and the same fix.\n")
+        a("    const bool ioOk = Io.begin(Wire);\n")
     if b["power_on"]:
         # The catalogue holds the snippet unindented; place it in the body here
         # so that a hand-written escape hatch does not have to know about
@@ -552,8 +604,10 @@ def emit_board(entry):
         a(f"    TinyM5::resetPulse({b['display']['rst']});\n")
     if b["backlight"]:
         a("    Backlight.begin();\n")
-    a("    return ok;\n  }\n\n" if b["pmic"] in ("axp192", "core2", "m5pm1")
-      else "    return true;\n  }\n\n")
+    ret = "ok" if b["pmic"] in ("axp192", "core2", "m5pm1") else "true"
+    if b["io_expander"]:
+        ret = f"{ret} && ioOk"
+    a(f"    return {ret};\n  }}\n\n")
 
     if b["power_hold"] is not None:
         a("  /// Latch the power rail on. Called by begin(), and safe to call\n")
@@ -731,6 +785,13 @@ TinyM5Trace::model().set(0x23, 0x0F);
 """)
 
 
+M5IOE1_MODEL = ("""\
+// The expander answers as well. Two chips on one bus is why the model is
+// a list rather than a single register file.
+TinyM5Trace::addChip(0, 0x4F, 0x00, 0x01);
+""")
+
+
 def variants(b):
     """One test per chip a board could be carrying.
 
@@ -744,6 +805,8 @@ def variants(b):
     if d["pmic"] == "axp192":
         return [("", AXP192_MODEL)]
     if d["pmic"] == "m5pm1":
+        if d["io_expander"] == "m5ioe1":
+            return [("", M5PM1_MODEL + M5IOE1_MODEL)]
         return [("", M5PM1_MODEL)]
     if d["pmic"] == "adc":
         pin = d["bat_adc"][0]
