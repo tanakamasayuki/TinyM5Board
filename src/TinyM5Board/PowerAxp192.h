@@ -240,6 +240,12 @@ class TinyM5BoardPowerAxp192 {
   }
 
   /// For the backlight classes that drive a rail on this chip.
+  /// Whether the power button is down. The AXP chips only latch that it
+  /// was pressed, so this is the latched flag rather than a live level -
+  /// enough for a debounced button, and the same call the M5PM1 answers
+  /// from its live state.
+  bool isKeyPressed() { return getKeyState() != 0; }
+
   TinyM5::I2cReg &reg() { return _reg; }
 
  private:

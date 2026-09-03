@@ -12,8 +12,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pytest:
+  # Cheap and sequential: nothing here builds a sketch.
+  catalogue:
     runs-on: ubuntu-latest
+    outputs:
+      families: ${{ steps.list.outputs.families }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # A stale generated header would make every other job test the
+      # wrong thing, so this gates them.
+      - name: Generated files are current
+        run: python3 tools/gen_boards.py --check
+
+      - id: list
+        run: echo "families=$(python3 tools/gen_boards.py --families)" >> "$GITHUB_OUTPUT"
+
+  # One job per board family. Each begin() test builds and runs its own
+  # sketch, so the wall clock grows with the catalogue; splitting on the
+  # family keeps it flat and makes a failure read as "Stick broke"
+  # rather than as one red tick among sixty.
+  begin:
+    needs: catalogue
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        family: ${{ fromJson(needs.catalogue.outputs.families) }}
+    name: begin (${{ matrix.family }})
     steps:
       - uses: actions/checkout@v4
 
@@ -29,26 +58,24 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-
       - uses: astral-sh/setup-uv@v5
 
       - name: Install test dependencies
         working-directory: tests
         run: uv sync
 
-      - name: Board catalogue is current
-        run: python3 tools/gen_boards.py --check
-
-      - name: Run pytest
+      - name: Run begin() goldens
         working-directory: tests
-        run: uv run pytest -v -s --profile host --html=report.html --self-contained-html
+        run: >
+          uv run pytest "begin/${{ matrix.family }}" -v -s --profile host
+          --html="report-${{ matrix.family }}.html" --self-contained-html
 
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-output
+          name: test-output-${{ matrix.family }}
           path: |
-            tests/report.html
+            tests/report-*.html
             tests/**/output/**
           if-no-files-found: ignore

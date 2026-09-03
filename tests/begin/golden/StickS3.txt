@@ -1,0 +1,41 @@
+--- begin() ---
+i2c0 begin sda=47 scl=48 hz=100000
+i2c1 begin sda=9 scl=10 hz=100000
+pinMode(11, INPUT_PULLUP)
+pinMode(12, INPUT_PULLUP)
+i2c0 write 0x6E [00] (no stop)
+i2c0 read  0x6E 4 -> [50 00 00 00]
+i2c0 write 0x6E [09 00]
+i2c0 write 0x6E [0A 00]
+i2c0 write 0x6E [16] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [16 00]
+i2c0 write 0x6E [10] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [10 04]
+i2c0 write 0x6E [13] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [13 00]
+i2c0 write 0x6E [11] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [11 04]
+pinMode(21, OUTPUT)
+digitalWrite(21, 1)
+digitalWrite(21, 0)
+digitalWrite(21, 1)
+pwm attach pin=38 ch=0 freq=256 res=9
+pwm write  pin=38 duty=273
+--- board ---
+name=M5StickS3 id=26
+pins i2c=47/48 ext=9/10 led=-1/0 hold=-1
+has display=1 backlight=1 battery=1 extI2c=1 shared=0
+--- display ---
+spi mosi=39 miso=-1 sclk=40 dc=45 cs=41 rst=-1 3wire=1
+freq write=40000000 read=16000000
+panel 135x240 offset=52,40 rotation=0 invert=1
+--- battery ---
+i2c0 write 0x6E [22] (no stop)
+i2c0 read  0x6E 2 -> [A0 0F]
+i2c0 write 0x6E [22] (no stop)
+i2c0 read  0x6E 2 -> [A0 0F]
+mV=4000 level=87

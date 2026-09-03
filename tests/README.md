@@ -12,6 +12,19 @@ Cores are never installed with `arduino-cli core install`. Each test's
 `sketch.yaml` pins the version, and `--profile` unpacks it under
 `~/.arduino15/internal/`, isolated per version.
 
+## Picking what to run
+
+`begin/` is split by board family, and the family is both the CI matrix
+axis and what you select on locally:
+
+```sh
+uv run pytest begin/Stick --profile host    # 3 boards, about 2 minutes
+uv run pytest begin --profile host          # everything, 5-8 minutes
+```
+
+Each one builds and runs its own sketch, so the wall clock grows with the
+catalogue. Day to day, run the family you touched.
+
 ## `begin/` — the bring-up golden
 
 Records what `Board.begin()` did to the bus and compares it with a frozen

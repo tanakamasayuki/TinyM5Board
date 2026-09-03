@@ -4,19 +4,19 @@
 
 ## 1. 現在地
 
-**9 機種。AXP192 / AXP2101 の両系統が、ホストのゴールデンと実機コアのビルドまで通っている。**
+**10 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統がホストのゴールデンと実機ビルドまで通っている。**
 
 | 項目 | 状況 |
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
-| `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / **テスト一式**を生成、`--check` つき |
-| ボード定義 | **9 機種** —— AtomLite / TimerCam / Capsule / StickCPlus2 / StickC / StickCPlus / Station / Tough / **Core2** |
-| 電源 | `PowerAdc` / `PowerAxp192` / **`PowerAxp2101`** / **`PowerCore2`**（二択の判別）。M5PM1 は未着手 |
+| `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
+| ボード定義 | **10 機種** —— AtomLite / TimerCam / Capsule / StickC / StickCPlus / StickCPlus2 / **StickS3** / Station / Tough / Core2 |
+| 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / **`PowerM5pm1`** / `PowerCore2`（二択の判別） |
 | バックライト | PWM / AXP192 の Ldo2・Ldo3・Dc3 / Core2（DC3 と BLDO1）。**すべて M5GFX と同じカーブ** |
-| ボタン | GPIO と PMIC の PEK を同じ型で。click カウントは未実装 |
-| 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセット（`rst == -1`）の表現あり |
-| `tests/begin/` | **10 スケッチ通過。** Core2 は**チップ 2 種で 2 本** |
-| `examples/Hello` | 実機コアでビルド確認済み |
+| ボタン | GPIO と PMIC の電源キーを同じ型で。click カウントは未実装 |
+| 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセットの表現あり |
+| `tests/begin/` | **11 スケッチ通過。群ごとのディレクトリ**で、CI の matrix 軸もこれ |
+| `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成 |
 | 利用者向け README | **無い。** 機種が揃ってから |
 
 ### 1.1 実測（arduino-esp32 3.3.11 / 同一スケッチ）
@@ -24,40 +24,36 @@
 | 構成 | フラッシュ |
 | --- | --- |
 | AtomLite（電源ハードなし） | 312,708 B |
-| Core2（**両チップをリンク**） | 313,524 B |
-| Core2（`TINYM5_CORE2_PMIC_AXP192` で固定） | 313,044 B |
-| Core2（`TINYM5_CORE2_PMIC_AXP2101` で固定） | 312,748 B |
-| StickC | 314,144 B |
+| Core2（両チップをリンク） | 313,524 B |
+| Core2（片方に固定） | 312,748〜313,044 B |
+| StickC（AXP192） | 314,144 B |
+| StickS3（M5PM1 / ESP32-S3） | 332,736 B |
 
-**二択のまま持つ代金は 480〜776 バイト。** 4 MB のボードで、
-これを惜しんで筐体を開けさせる理由はない。
+**二択のまま持つ代金は 480〜776 バイト。**
 
 ### 1.2 実装して分かったこと
 
-**`if constexpr` では機能の有無を分岐できない**（D31）。`TINYM5_HAS_*` マクロを出す。
-ボタンは**ボード間で一番ばらつく**（Tough は 0 個、StickC は PMIC の中、Station は 3 個）
-ので `TINYM5_HAS_BTN_*` も要る。
+**`if constexpr` では機能の有無を分岐できない**（D31）。`TINYM5_HAS_*` を出す。
+ボタンは**ボード間で一番ばらつく**ので `TINYM5_HAS_BTN_*` も要る。
 
-**ゴールデンは順序だけでは足りない**（TEST_PLAN §3.2.2）。StickC と StickC Plus は
-電源手順もピンも同一で、違うのはパネルだけ。カタログの中身もゴールデンに入れている。
+**ゴールデンは順序だけでは足りない**（TEST_PLAN §3.2.2）。カタログの中身も入れる。
 
 **読み出しは差し込んで検算する**（TEST_PLAN §3.2.1）。分圧比も 12 bit の組み立ても、
 間違っていても「それらしい電圧」が出るだけで落ちない。
 
 **`power_on` は `Power.begin()` の後**（D32）、**レール電圧はレール投入の前**（D33）。
-どちらもゴールデンが見つけた。
 
 **二択の判別は上位で 1 回だけ読む。** 各ドライバに順番に `probe()` させると
-同じレジスタを 2 回読み、**実機がやらない「失敗した検出」がトレースに残る**。
+実機がやらない「失敗した検出」がトレースに残る。
 
-**pytest-embedded は `dut` がモジュールスコープ、`expect` のバッファはセッション共有**
-（TEST_PLAN §3.4）。生成側で守っている。
+**`bit()` は Arduino のマクロ。** 同名のメンバ関数を書くとプリプロセッサに
+書き換えられ、エラーがコアのヘッダの行番号で出る。
 
-### 1.3 気になり始めていること
+### 1.3 テストの所要時間
 
-`tests/begin` の実行が **10 スケッチで 5〜8 分**。1 スケッチあたりビルドと実行で約 30 秒。
-機種が増えるほど線形に伸びるので、**60 機種では 30 分を超える。**
-CI では群ごとに分けるか、ビルドを並列にするかの判断がいずれ要る。
+`tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
+11 スケッチで約 8 分。**群ごとに並列化してある**ので CI では最長の群の時間で済み、
+ローカルは `pytest begin/Stick` のように絞れる（約 2 分）。
 
 ## 2. 次にやること
 
@@ -144,10 +140,12 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 4. ~~Station / Tough~~ —— 通した。**リセットが I2C 越し**の形
    （`display().rst == -1`）はここで実地になった
 5. ~~Core2~~ —— 通した。**二択の判別（D5）は両分岐ともホストで検証済み**
-6. **M5PM1** —— 9 機種に効く。StickS3 / StopWatch / PaperMono / ChainCaptain /
-   PaperColor / PaperDIY / CoreP4X / ToughC5 / CoreMatrix
-7. **CoreS3 系** —— AXP2101 は済んでいるが AW9523B（IO エキスパンダ）が要る
-8. 残りの画面なしボード —— ピン表だけで済むものが多い
+6. ~~M5PM1~~ —— ドライバは書けた。StickS3 で通した
+7. **M5IOE1 を使う機種** —— StopWatch / PaperMono / ChainCaptain / CoreP4X /
+   ToughC5 / CoreMatrix。M5PM1 は済んでいるが **IO エキスパンダが要る**
+8. **CoreS3 系** —— AXP2101 は済んでいるが AW9523B が要る
+9. **PI4IOE5V6408** —— StampPLC / Tab5 / Tab5X / NessoN1 / UnitC6L
+10. 残りの画面なしボード —— ピン表だけで済むものが多い
 
 ### 2-7. 積んである宿題
 

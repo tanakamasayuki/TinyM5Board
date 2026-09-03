@@ -49,6 +49,7 @@ roles rather than registers - `Axp192::enable(w, Axp192::Ldo2)`, never
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -301,6 +302,34 @@ Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
     ),
+    dict(
+        id="StickS3",
+        name="M5StickS3",
+        board_id=26,
+        family="Stick",
+        soc="esp32s3",
+        note="The Stick with M5Stack's own PMIC instead of an AXP192. Nothing\n"
+             "reaches the panel until the chip's GPIO2 is driven high, and the\n"
+             "chip itself stops answering if its idle-sleep timeout was ever\n"
+             "set - a setting that survives a power cycle. begin() clears it\n"
+             "every time for that reason.",
+        i2c_int=(47, 48),
+        i2c_ext=(9, 10),
+        buttons={"A": 11, "B": 12, "Pwr": "pek"},
+        pmic="m5pm1",
+        backlight=("pwm", 38, 256, 16),
+        display=dict(bus="spi3", mosi=39, miso=-1, sclk=40, dc=45, cs=41, rst=21,
+                     freq_write=40000000, freq_read=16000000,
+                     w=135, h=240, ox=52, oy=40, invert=True,
+                     three_wire=True),
+        power_on="""\
+// GPIO2 switches L3B, which is the panel's supply. Push-pull output,
+// driven high, then a moment for the rail to settle before the reset.
+// (M5GFX.cpp, the StickS3 branch)
+Power.gpioEnableRail(TinyM5BoardPowerM5pm1::Gpio::Io2);
+delay(100);
+""",
+    ),
 ]
 
 
@@ -319,6 +348,7 @@ POWER_CLASS = {
     "adc": "TinyM5BoardPowerAdc",
     "axp192": "TinyM5BoardPowerAxp192",
     "core2": "TinyM5BoardPowerCore2",
+    "m5pm1": "TinyM5BoardPowerM5pm1",
 }
 RAIL_ENUM = {"axp192": "TinyM5BoardPowerAxp192"}
 
@@ -379,6 +409,8 @@ def emit_board(entry):
         a('#include "TinyM5Board/PowerAxp192.h"\n')
     elif b["pmic"] == "core2":
         a('#include "TinyM5Board/PowerCore2.h"\n')
+    elif b["pmic"] == "m5pm1":
+        a('#include "TinyM5Board/PowerM5pm1.h"\n')
     if b["backlight"]:
         if b["backlight"][0] == "pwm":
             a('#include "TinyM5Board/BacklightPwm.h"\n')
@@ -443,6 +475,10 @@ def emit_board(entry):
         a("  // that are not the chip's default. The driver knows which bit is\n")
         a("  // which; the board knows what they feed.\n")
         a(f"  {cls_p} Power{{{args}}};\n\n")
+    elif b["pmic"] == "m5pm1":
+        rails = " | ".join(f"TinyM5BoardPowerM5pm1::{r}" for r in b["rails"]) or "0"
+        a("  // ---- power ----\n")
+        a(f"  TinyM5BoardPowerM5pm1 Power{{{rails}}};\n\n")
     elif b["pmic"] == "core2":
         a("  // ---- power ----\n")
         a("  // Two chips are possible under this one product name, so the\n")
@@ -467,7 +503,7 @@ def emit_board(entry):
                 a("  // I2C, rate limited so update() does not flood the bus.\n")
                 a(f"  TinyM5BoardButton Btn{name}{{\n")
                 a("      [](void *p) {\n")
-                a(f"        return static_cast<{POWER_CLASS[b['pmic']]} *>(p)->getKeyState() != 0;\n")
+                a(f"        return static_cast<{POWER_CLASS[b['pmic']]} *>(p)->isKeyPressed();\n")
                 a("      },\n")
                 a("      &Power, true};\n")
                 continue
@@ -496,6 +532,11 @@ def emit_board(entry):
         a("    // The chip is soldered on, so no answer is a real fault. The\n")
         a("    // rails have to be up before the panel is taken out of reset.\n")
         a("    const bool ok = Power.begin(Wire);\n")
+    elif b["pmic"] == "m5pm1":
+        a("    // The idle-sleep timeout and the watchdog are disabled in here;\n")
+        a("    // both survive a power cycle and both can make this board look\n")
+        a("    // dead if something else set them.\n")
+        a("    const bool ok = Power.begin(Wire);\n")
     elif b["pmic"] == "core2":
         a("    // Asks the chip which of the two it is, then runs that one's\n")
         a("    // bring-up - including the panel reset, which is a rail on one\n")
@@ -511,7 +552,7 @@ def emit_board(entry):
         a(f"    TinyM5::resetPulse({b['display']['rst']});\n")
     if b["backlight"]:
         a("    Backlight.begin();\n")
-    a("    return ok;\n  }\n\n" if b["pmic"] in ("axp192", "core2")
+    a("    return ok;\n  }\n\n" if b["pmic"] in ("axp192", "core2", "m5pm1")
       else "    return true;\n  }\n\n")
 
     if b["power_hold"] is not None:
@@ -644,8 +685,8 @@ profiles:
       - platform: lang-ship:host (1.6.0)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
-      - dir: ../../../
-      - dir: ../../common_libs/tinym5_trace
+      - dir: ../../../../
+      - dir: ../../../common_libs/tinym5_trace
 
 default_profile: host
 """
@@ -678,6 +719,18 @@ TinyM5Trace::model().set(0xA4, 87);
 """)
 
 
+M5PM1_MODEL = ("""\
+// The M5PM1 has to answer at its own address, 0x6E rather than 0x34.
+// Its id is four bytes and the driver only checks that the read
+// succeeded, the same as M5Stack's own library.
+TinyM5Trace::useChip(0, 0x6E, 0x00, 0x50);
+// Millivolts, little-endian: 0x0FA0 == 4000. No fuel gauge on this chip,
+// so the level in the golden is the estimate from that voltage.
+TinyM5Trace::model().set(0x22, 0xA0);
+TinyM5Trace::model().set(0x23, 0x0F);
+""")
+
+
 def variants(b):
     """One test per chip a board could be carrying.
 
@@ -690,6 +743,8 @@ def variants(b):
         return [("Axp192", AXP192_MODEL), ("Axp2101", AXP2101_MODEL)]
     if d["pmic"] == "axp192":
         return [("", AXP192_MODEL)]
+    if d["pmic"] == "m5pm1":
+        return [("", M5PM1_MODEL)]
     if d["pmic"] == "adc":
         pin = d["bat_adc"][0]
         return [("", f"// 2000 mV at the pin, so the golden shows what this board's\n"
@@ -754,7 +809,9 @@ def outputs():
         files[SRC / f"TinyM5Board{b['id']}.h"] = emit_board(b)
         for suffix, model in variants(b):
             name = b["id"] + suffix
-            d = TESTS / "begin" / name
+            # Grouped by family so that the family is also the unit a CI
+            # matrix and a local run select on: `pytest begin/Stick`.
+            d = TESTS / "begin" / b["family"] / name
             files[d / f"{name}.ino"] = emit_sketch(b, model, name)
             files[d / "sketch.yaml"] = SKETCH_YAML
             files[d / f"test_{name}.py"] = emit_test(b, name)
@@ -764,7 +821,14 @@ def outputs():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="fail if anything is out of date")
+    ap.add_argument("--families", action="store_true",
+                    help="print the families as a JSON array, for a CI matrix")
     args = ap.parse_args()
+
+    if args.families:
+        # Sorted so the matrix order does not depend on catalogue order.
+        print(json.dumps(sorted({b["family"] for b in BOARDS})))
+        return 0
 
     stale = []
     for path, text in outputs().items():

@@ -116,6 +116,7 @@ class TinyM5BoardPowerCore2 {
   TinyM5::Charge isCharging() { return dispatch(&A192::isCharging, &A2101::isCharging); }
   bool isVBUSPresent() { return dispatch(&A192::isVBUSPresent, &A2101::isVBUSPresent); }
   uint8_t getKeyState() { return dispatch(&A192::getKeyState, &A2101::getKeyState); }
+  bool isKeyPressed() { return dispatch(&A192::isKeyPressed, &A2101::isKeyPressed); }
 
   void setBatteryCharge(bool enable)
   {

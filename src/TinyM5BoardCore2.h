@@ -66,7 +66,7 @@ class TinyM5BoardCore2 {
   // I2C, rate limited so update() does not flood the bus.
   TinyM5BoardButton BtnPwr{
       [](void *p) {
-        return static_cast<TinyM5BoardPowerCore2 *>(p)->getKeyState() != 0;
+        return static_cast<TinyM5BoardPowerCore2 *>(p)->isKeyPressed();
       },
       &Power, true};
 

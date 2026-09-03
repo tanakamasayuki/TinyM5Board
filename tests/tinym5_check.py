@@ -1,9 +1,11 @@
 """Shared body of the begin() golden test.
 
-One directory per board. The plugin's `dut` fixture is module scoped and
-the build path follows the sketch directory, so sharing one sketch across
-boards makes the second module attach to the first one's still-running
-process and read a trace that was never written.
+One directory per board, under its family: `begin/Stick/StickC/`. Two
+reasons. The plugin's `dut` fixture is module scoped and the build path
+follows the sketch directory, so sharing one sketch across boards makes
+the second module attach to the first one's still-running process. And
+the family directory is what a CI matrix and a local run select on -
+`pytest begin/Stick` is one job's worth.
 
 `tools/gen_boards.py` generates the sketch, the profile and the test from
 the catalogue, so adding a board cannot forget to add its test.
@@ -24,7 +26,7 @@ def check_begin(dut, request, board):
     dut.expect(f"TEST start {board}", timeout=60)
     dut.expect(f"TEST done {board}", timeout=60)
 
-    trace = (BEGIN / board / "output" / "trace.txt").read_text(encoding="utf-8")
+    trace = next(BEGIN.glob(f"*/{board}/output/trace.txt")).read_text(encoding="utf-8")
     golden = GOLDEN / f"{board}.txt"
 
     if request.config.getoption("--update-golden"):

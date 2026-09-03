@@ -181,18 +181,37 @@ PaperDIY / CoreP4X / ToughC5 / CoreMatrix でも同じマップ。**計 9 機種
 | `0x30`-`0x31` | PWM0 duty L/H (H の bit4 = enable) | PaperMono のフロントライト |
 | `0x34`-`0x35` | PWM 周波数 L/H (Hz、16 bit LE) | 同上 |
 
-### M5PM1 — 電源系 ⚠ **未解明**
+### M5PM1 — 電源系
 
 **M5GFX からは分からない。** M5GFX が触っているのは上表の表示系レジスタだけで
 (`0x00`,`0x06`,`0x09`,`0x0A`,`0x10`,`0x11`,`0x13`,`0x16`,`0x30`-`0x31`,`0x34`-`0x35`)、
 電池・充電系のレジスタは一度も出てこない。
 
-分かっている出所は 2 つ:
+以下は M5Stack 公式ドライバ (`~/dev/M5PM1/src/M5PM1.h`、MIT) から。
 
-1. M5Unified の M5PM1 対応コード (`src/utility/power/M5PM1.*`)
-2. M5Stack 公式の M5PM1 ドライバ (`~/dev/M5PM1`)
+| レジスタ | 内容 |
+|---|---|
+| `0x00`-`0x03` | DEVICE_ID / DEVICE_MODEL / HW_REV / SW_REV |
+| `0x04` | PWR_SRC — 現在の給電源。**0=5VIN / 1=5VINOUT / 2=電池** |
+| `0x05` | WAKE_SRC — 起動要因 (bit2 電源ボタン / bit1 VIN 挿入 / bit0 タイマ ほか)。**0 を書いてクリア** |
+| `0x06` | PWR_CFG — bit0 CHG_EN / bit1 DCDC_EN (5V) / **bit2 LDO_EN (3.3V)** / bit3 BOOST_EN (5VINOUT) / bit4 LED_EN |
+| `0x07` | HOLD_CFG — 電源保持。bit5 LDO / bit0-4 GPIO0-4 の出力状態。**リセット/シャットダウンで 0 に戻る** |
+| `0x08` | BATT_LVP — 低電圧保護。**mV = 2000 + n × 7.81** (2000〜4000 mV) |
+| `0x09` | I2C_CFG — bit4 速度 (0=100k/1=400k) / bit3-0 **アイドルスリープ秒 (0=無効)** |
+| `0x0A` | WDT_CNT — ウォッチドッグ秒 (0=無効) / `0x0B` WDT_KEY に `0xA5` で餌やり |
+| `0x0C` | SYS_CMD — **上位ニブルに `0xA` が鍵**。下位 2 bit: 01=シャットダウン / 10=再起動 / 11=ダウンロードモード |
+| `0x22`/`0x23` | **VBAT — mV そのまま、リトルエンディアン** |
+| `0x24`/`0x25` | VIN 電圧 (mV) / `0x26`/`0x27` 5VINOUT 電圧 (mV) |
+| `0x28`/`0x29` | ADC 結果 (mV) / `0x2A` ADC_CTRL |
+| `0x40`-`0x42` | IRQ ステータス 1〜3 / `0x43`-`0x45` IRQ マスク |
+| `0x48` | BTN_STATUS — **bit7 押された履歴 (読むと自動クリア) / bit0 現在の状態** |
+| `0x49`/`0x4A` | BTN_CFG |
+| `0x60`- | NeoPixel データ / `0xA0`- RTC RAM (32 バイト) |
 
-`0x06` (PWR_CFG) のコメントに `CHG_EN` が出てくるので、充電制御はこの近辺にある可能性が高い。
+**残量計は無い。** `0x22`/`0x23` の電圧から推定するしかない (AXP192 と同じ)。
+
+**充電中かどうかを直接返すレジスタも無い。** `0x04` (PWR_SRC) が電池以外を指していれば
+外部電源が来ている、という推定になる (M5Unified の `isCharging()` は無条件で false を返す)。
 
 ---
 

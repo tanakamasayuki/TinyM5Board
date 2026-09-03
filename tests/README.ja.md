@@ -16,6 +16,19 @@ uv run pytest begin --profile host
 バージョンを書いてあり、`--profile` がそれを `~/.arduino15/internal/` へ
 隔離して入れる（[../docs/DECISIONS.ja.md](../docs/DECISIONS.ja.md) D29）。
 
+## 走らせる単位
+
+`begin/` は**群でディレクトリが分かれている**。群がそのまま
+GitHub Actions の matrix の軸で、ローカルでも同じ単位で絞れる。
+
+```sh
+uv run pytest begin/Stick --profile host    # 3 機種、約 2 分
+uv run pytest begin --profile host          # 全部、約 5〜8 分
+```
+
+1 本ごとにスケッチをビルドして実行するので、**所要時間は機種数に線形**。
+普段は自分が触った群だけを回せばよい。
+
 ## `begin/` — 初期化列のゴールデン
 
 `Board.begin()` がバスに対して何をしたかを記録し、凍結した期待値と突き合わせる。

@@ -244,5 +244,32 @@ CI もローカルも同じコアが入り、**コアが上がって黙って結
 | 2 | `esp32:esp32`（profile 固定） | ✅（重いので代表ボードのみ） |
 | 3 | 実機 | ❌ 手動 |
 
-結果は**群単位**で出す（[DECISIONS.ja.md](DECISIONS.ja.md) D19）。
+### 7.1 群ごとに並列化する
+
+**`tests/begin/` は群でディレクトリを分けてある**ので、群がそのまま
+GitHub Actions の matrix の軸になる。
+
+```yaml
+matrix:
+  family: ${{ fromJson(needs.catalogue.outputs.families) }}
+run: uv run pytest "begin/${{ matrix.family }}" --profile host
+```
+
+軸は `tools/gen_boards.py --families` がカタログから出すので、
+**群を足しても workflow は触らなくてよい。**
+
+ローカルでも同じ単位で絞れる。
+
+```sh
+uv run pytest begin/Stick --profile host    # 3 機種、約 2 分
+uv run pytest begin --profile host          # 全部、約 5〜8 分
+```
+
+**必要な理由**: `begin` のテストは 1 本ごとにスケッチをビルドして実行するので、
+所要時間が機種数に線形に伸びる。10 スケッチで 5〜8 分、**60 機種なら 30 分を超える。**
+
+結果が群単位で出るのは副産物だが効く（[DECISIONS.ja.md](DECISIONS.ja.md) D19）。
 64 機種の緑ランプより「Stick 系 全機種通過」のほうが読める。
+
+`--check`（生成物が最新か）は 1 回だけ走らせ、**全 matrix ジョブの前段**に置く。
+生成物が古いと、他のジョブは全部「違うものを検査した」ことになるため。

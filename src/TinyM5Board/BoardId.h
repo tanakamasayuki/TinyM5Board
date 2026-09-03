@@ -16,6 +16,7 @@ enum class BoardId : uint16_t {
   Station = 9,
   StickCPlus = 13,
   StickCPlus2 = 17,
+  StickS3 = 26,
   AtomLite = 128,
   TimerCam = 132,
   Capsule = 139,

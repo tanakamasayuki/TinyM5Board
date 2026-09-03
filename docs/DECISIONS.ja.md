@@ -552,6 +552,28 @@ M5GFX がこの順（`0x28` に 3300 mV → `0x12` で LDO2 ON）なのには理
 **先に投入すると、リセット値の電圧が一瞬パネルに掛かる。**
 実装中に逆順で書いてゴールデンを取り、M5GFX と並べて気づいた。
 
+### D34. テストは群ごとに分けて並列化する
+
+`tests/begin/` を `begin/<群>/<ボード>/` の形にして、**群を CI の matrix の軸**にする。
+
+```yaml
+matrix:
+  family: ${{ fromJson(needs.catalogue.outputs.families) }}
+run: uv run pytest "begin/${{ matrix.family }}" --profile host
+```
+
+軸は `tools/gen_boards.py --families` がカタログから出すので、
+**群を足しても workflow を触らなくてよい。**
+
+必要な理由は所要時間。`begin` は 1 本ごとにスケッチをビルドして実行するので、
+**機種数に線形に伸びる。** 11 スケッチで約 8 分、60 機種なら 30 分を超える。
+
+ローカルでも同じ単位で絞れる（`pytest begin/Stick` で約 2 分）ので、
+普段は自分が触った群だけを回せばよい。
+
+`--check`（生成物が最新か）は matrix の**前段に 1 回だけ**置く。
+生成物が古いと、後続のジョブは全部「違うものを検査した」ことになるため。
+
 ---
 
 ## 2. 調査メモから変えた点

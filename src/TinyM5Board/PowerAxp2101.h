@@ -101,6 +101,12 @@ class TinyM5BoardPowerAxp2101 {
     return (uint8_t)(val >> 2);
   }
 
+  /// Whether the power button is down. The AXP chips only latch that it
+  /// was pressed, so this is the latched flag rather than a live level -
+  /// enough for a debounced button, and the same call the M5PM1 answers
+  /// from its live state.
+  bool isKeyPressed() { return getKeyState() != 0; }
+
   TinyM5::I2cReg &reg() { return _reg; }
 
  private:
