@@ -588,7 +588,7 @@ profiles:
     fqbn: lang-ship:host:host
     port: socket://localhost
     platforms:
-      - platform: lang-ship:host (1.5.0)
+      - platform: lang-ship:host (1.6.0)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../../
@@ -615,7 +615,16 @@ def emit_sketch(b):
         addr, reg, val = chip
         model_setup = (f"\n  // The {d['pmic'].upper()} has to answer or begin() stops at its\n"
                        f"  // detection read and the rest of the trace never happens.\n"
-                       f"  TinyM5Trace::useChip(0, {addr}, {reg}, {val});\n")
+                       f"  TinyM5Trace::useChip(0, {addr}, {reg}, {val});\n"
+                       "  // 0xE34 counts at 1.1 mV each == 4000 mV, so the golden shows\n"
+                       "  // whether the conversion is right rather than just plausible.\n"
+                       "  TinyM5Trace::model().set(0x78, 0xE3);\n"
+                       "  TinyM5Trace::model().set(0x79, 0x04);\n")
+    elif d["pmic"] == "adc":
+        pin = d["bat_adc"][0]
+        model_setup = (f"\n  // 2000 mV at the pin, so the golden shows what this board's\n"
+                       f"  // divider ratio makes of it.\n"
+                       f"  HostArduino::setAnalogMilliVolts({pin}, 2000);\n")
     return f'''// What Board.begin() does on the {b["name"]}, recorded for the golden.
 //
 // The include is the spelling the README recommends, so the test walks

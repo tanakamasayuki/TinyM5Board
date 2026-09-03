@@ -12,6 +12,10 @@ void setup()
   Serial.begin(115200);
   TinyM5Trace::start("StickCPlus2");
 
+  // 2000 mV at the pin, so the golden shows what this board's
+  // divider ratio makes of it.
+  HostArduino::setAnalogMilliVolts(38, 2000);
+
   Board.begin();
 
   TinyM5Trace::finish();

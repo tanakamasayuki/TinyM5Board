@@ -9,10 +9,12 @@
 // The trace is written to output/trace.txt next to the sketch and echoed
 // to serial, matching how the other host tests in this repository report.
 //
-// Known gap: Wire.begin() is not hookable, so it does not appear in the
-// ordered part of the trace. The pins and clock it left behind are
-// recorded in the state section instead. Every I2C *transaction* is
-// ordered correctly, which is what matters for a rail bring-up sequence.
+// All four halves of the port are recorded into one ordered stream, which
+// is the whole point: what a bring-up gets wrong is usually the order.
+// host-arduino-core 1.6.0 closed the two gaps that used to leave holes in
+// it - `Wire.begin()` now announces itself through a lifecycle hook, and
+// the analog / PWM half makes a backlight being configured and lit
+// visible instead of silent.
 #pragma once
 
 #include <Arduino.h>
@@ -80,6 +82,46 @@ inline void hex(char *out, size_t outlen, const uint8_t *data, size_t len)
   out[n] = 0;
 }
 
+inline void onI2cLifecycle(TwoWire::LifecycleEvent event, const TwoWire &wire, void *)
+{
+  const uint8_t bus = wire.busNum();
+  switch (event) {
+    case TwoWire::kBegin:
+      line("i2c%u begin sda=%d scl=%d hz=%u", bus, wire.sda(), wire.scl(),
+           (unsigned)wire.getClock());
+      break;
+    case TwoWire::kEnd: line("i2c%u end", bus); break;
+    case TwoWire::kSetPins:
+      line("i2c%u pins sda=%d scl=%d", bus, wire.sda(), wire.scl());
+      break;
+    case TwoWire::kSetClock: line("i2c%u clock hz=%u", bus, (unsigned)wire.getClock()); break;
+    case TwoWire::kSetTimeout: break;  // not board data
+  }
+}
+
+inline void onAnalogWrite(HostArduino::AnalogWriteEvent event,
+                          const HostArduino::AnalogOut &out, void *)
+{
+  switch (event) {
+    case HostArduino::kAnalogAttach:
+      line("pwm attach pin=%u ch=%u freq=%u res=%u", out.pin, out.channel,
+           (unsigned)out.frequency, out.resolution);
+      break;
+    case HostArduino::kAnalogConfig:
+      line("pwm config pin=%u freq=%u res=%u", out.pin, (unsigned)out.frequency,
+           out.resolution);
+      break;
+    case HostArduino::kAnalogWrite:
+      line("pwm write  pin=%u duty=%u", out.pin, (unsigned)out.duty);
+      break;
+    case HostArduino::kAnalogDetach: line("pwm detach pin=%u", out.pin); break;
+    case HostArduino::kAnalogTone:
+      line("pwm tone   pin=%u freq=%u", out.pin, (unsigned)out.frequency);
+      break;
+    case HostArduino::kAnalogDac: line("dac write  pin=%u value=%u", out.pin, (unsigned)out.duty); break;
+  }
+}
+
 inline void onPinMode(uint8_t pin, uint8_t mode, void *)
 {
   line("pinMode(%u, %s)", pin, modeName(mode));
@@ -131,20 +173,14 @@ inline void start(const char *board)
   HostArduino::resetPinState();
   HostArduino::setPinModeHook(onPinMode);
   HostArduino::setPinWriteHook(onPinWrite);
+  HostArduino::setAnalogWriteHook(onAnalogWrite);
   Wire.setWriteHook(onI2cWrite<0>);
   Wire.setReadHook(onI2cRead<0>);
+  Wire.setLifecycleHook(onI2cLifecycle);
   Wire1.setWriteHook(onI2cWrite<1>);
   Wire1.setReadHook(onI2cRead<1>);
+  Wire1.setLifecycleHook(onI2cLifecycle);
   line("--- begin() ---");
-}
-
-inline void bus(const char *label, TwoWire &w)
-{
-  if (!w.begun()) {
-    line("%s: not begun", label);
-    return;
-  }
-  line("%s: begun sda=%d scl=%d hz=%u", label, w.sda(), w.scl(), (unsigned)w.getClock());
 }
 
 /// Stop recording and close the trace.
@@ -175,12 +211,21 @@ inline void finish()
          d.offsetX, d.offsetY, d.rotation, d.invert);
   }
 #endif
-  line("--- state ---");
-  bus("i2c0", Wire);
-  bus("i2c1", Wire1);
+#if TINYM5_HAS_BATTERY
+  // What the board makes of a known reading. The divider ratio and the
+  // chip's LSB size are board and chip data that nothing else in the
+  // trace would exercise - a wrong ratio reports a plausible-looking
+  // voltage rather than failing.
+  line("--- battery ---");
+  line("mV=%d level=%d", (int)Board.Power.getBatteryVoltage(),
+       (int)Board.Power.getBatteryLevel());
+#endif
   HostArduino::clearPinHooks();
+  HostArduino::clearAnalogHooks();
   Wire.clearHooks();
+  Wire.setLifecycleHook(nullptr);
   Wire1.clearHooks();
+  Wire1.setLifecycleHook(nullptr);
   if (file()) {
     fclose(file());
     file() = nullptr;

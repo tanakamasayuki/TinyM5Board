@@ -1,4 +1,6 @@
 --- begin() ---
+i2c0 begin sda=21 scl=22 hz=100000
+i2c1 begin sda=32 scl=33 hz=100000
 pinMode(37, INPUT)
 pinMode(39, INPUT)
 i2c0 write 0x34 [03] (no stop)
@@ -25,6 +27,9 @@ has display=1 backlight=1 battery=1 extI2c=1 shared=0
 spi mosi=15 miso=14 sclk=13 dc=23 cs=5 rst=-1 3wire=1
 freq write=40000000 read=15000000
 panel 135x240 offset=52,40 rotation=0 invert=1
---- state ---
-i2c0: begun sda=21 scl=22 hz=100000
-i2c1: begun sda=32 scl=33 hz=100000
+--- battery ---
+i2c0 write 0x34 [78] (no stop)
+i2c0 read  0x34 2 -> [E3 04]
+i2c0 write 0x34 [78] (no stop)
+i2c0 read  0x34 2 -> [E3 04]
+mV=3999 level=87

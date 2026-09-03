@@ -32,15 +32,11 @@ class TinyM5BoardPowerAdc {
   /// Battery voltage in mV, or 0 when it cannot be read.
   int16_t getBatteryVoltage()
   {
-#if defined(ARDUINO_ARCH_ESP32)
     // The Arduino core owns the attenuation and the calibration; reading
     // through analogReadMilliVolts keeps that ownership rather than
     // fighting it with per-pin overrides.
     const uint32_t mv = analogReadMilliVolts(_pin);
     return (int16_t)((mv * _ratio) / 1000);
-#else
-    return 0;
-#endif
   }
 
   /// 0-100, or -1 when the voltage cannot be read.

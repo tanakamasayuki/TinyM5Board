@@ -9,6 +9,11 @@
 // 9-bit resolution and the `offset` that lifts the floor on panels that
 // never go fully dark. Keeping the arithmetic identical means a board
 // looks the same brightness under either library. It is all integer.
+//
+// `analogWrite` and its two configuration calls are the Arduino spelling
+// of what arduino-esp32 drives through LEDC, and host-arduino-core
+// implements them for real, so this path is the same on both targets and
+// the host trace shows the backlight coming up.
 #pragma once
 
 #include <Arduino.h>
@@ -27,19 +32,15 @@ class TinyM5BoardBacklightPwm {
 
   void begin(uint8_t brightness = 128)
   {
-#if defined(ARDUINO_ARCH_ESP32)
     analogWriteResolution(_pin, kBits);
     analogWriteFrequency(_pin, _freq);
-#endif
     set(brightness);
   }
 
   void set(uint8_t brightness)
   {
     _brightness = brightness;
-#if defined(ARDUINO_ARCH_ESP32)
     analogWrite(_pin, duty(brightness));
-#endif
   }
 
   uint8_t get() const { return _brightness; }

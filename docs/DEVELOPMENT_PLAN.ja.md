@@ -149,14 +149,14 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 | **SD の SPI モード落とし** | Core2 / Tough / M5Stack / CoreS3 / StampPLC / PaperColor / Paper は SD が LCD と同じ SPI バスに載る。SD モードのままだとバス上で応答してパネル ID 読みを壊す。**責務としては持つと決めている**（REQUIREMENTS §4.2）が未実装 |
 | Button の click カウント | `wasClicked` / `wasDoubleClicked` / `getClickCount` が未実装 |
 
-### 2-6. host-arduino-core への要望
+### 2-6. ~~host-arduino-core への要望~~ —— 1.6.0 で解決
 
-どちらも「あれば埋まる」もので、無くても進められる。
+`Wire.setLifecycleHook` と `HostArduino::setAnalogWriteHook`、そして
+`setAnalogMilliVolts` による読み出しの差し込みが入った。
 
-| | 効果 |
-| --- | --- |
-| `Wire.begin()` のフック | I2C の初期化がゴールデンの順序に載る |
-| `analogWrite` / `ledc` のフック | **バックライトの初期化がゴールデンに載る**。TODO に「no-op stub で足りる」とあるが、フックがあると検査できる |
+結果として **`#if defined(ARDUINO_ARCH_ESP32)` のガードを 2 箇所で外せた。**
+`BacklightPwm` と `PowerAdc` はホストで中身を実行しない形にしてあったが、
+今は**実機と同じコードがそのまま走る。** 迂回した経路が残らない。
 
 ## 3. リポジトリ整備
 
