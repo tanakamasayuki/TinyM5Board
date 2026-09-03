@@ -55,10 +55,11 @@ class TinyM5BoardStickS3 {
   TinyM5BoardBacklightPwm Backlight{38, 256, 16};
 
   // ---- buttons ----
+  // Some of these are not pins on the SoC - they live in the
+  // power chip or the expander and are read over I2C, so those
+  // are rate limited to the debounce interval.
   TinyM5BoardButton BtnA{[] { return digitalRead(kBtnA) == LOW; }};
   TinyM5BoardButton BtnB{[] { return digitalRead(kBtnB) == LOW; }};
-  // No pin: the power key lives in the PMIC and is read over
-  // I2C, rate limited so update() does not flood the bus.
   TinyM5BoardButton BtnPwr{
       [](void *p) {
         return static_cast<TinyM5BoardPowerM5pm1 *>(p)->isKeyPressed();

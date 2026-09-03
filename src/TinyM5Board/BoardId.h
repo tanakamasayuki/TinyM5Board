@@ -17,6 +17,7 @@ enum class BoardId : uint16_t {
   CoreS3 = 10,
   StickCPlus = 13,
   StickCPlus2 = 17,
+  StampPLC = 21,
   StickS3 = 26,
   ChainCaptain = 32,
   AtomLite = 128,

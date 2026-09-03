@@ -1,0 +1,68 @@
+--- begin() ---
+i2c0 begin sda=13 scl=15 hz=100000
+i2c1 begin sda=2 scl=1 hz=100000
+i2c0 write 0x43 [01] (no stop)
+i2c0 read  0x43 1 -> [A0]
+i2c0 write 0x43 [03] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [03 00]
+i2c0 write 0x43 [0D] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [0D 01]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [0B 01]
+i2c0 write 0x43 [07] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [07 00]
+i2c0 write 0x43 [03] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [03 00]
+i2c0 write 0x43 [0D] (no stop)
+i2c0 read  0x43 1 -> [01]
+i2c0 write 0x43 [0D 03]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [01]
+i2c0 write 0x43 [0B 03]
+i2c0 write 0x43 [07] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [07 00]
+i2c0 write 0x43 [03] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [03 00]
+i2c0 write 0x43 [0D] (no stop)
+i2c0 read  0x43 1 -> [03]
+i2c0 write 0x43 [0D 07]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [03]
+i2c0 write 0x43 [0B 07]
+i2c0 write 0x43 [07] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [07 00]
+pinMode(3, OUTPUT)
+digitalWrite(3, 1)
+digitalWrite(3, 0)
+digitalWrite(3, 1)
+i2c0 write 0x43 [03] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [03 80]
+i2c0 write 0x43 [0D] (no stop)
+i2c0 read  0x43 1 -> [07]
+i2c0 write 0x43 [0D 07]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [07]
+i2c0 write 0x43 [0B 87]
+i2c0 write 0x43 [07] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [07 00]
+i2c0 write 0x43 [05] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [05 00]
+--- board ---
+name=M5StampPLC id=21
+pins i2c=13/15 ext=2/1 led=21/1 hold=-1
+has display=1 backlight=1 battery=0 extI2c=1 shared=0
+--- display ---
+spi mosi=8 miso=9 sclk=7 dc=6 cs=12 rst=-1 3wire=1
+freq write=40000000 read=16000000
+panel 135x240 offset=52,40 rotation=1 invert=1

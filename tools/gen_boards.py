@@ -410,6 +410,38 @@ Power.setAldo3Millivolt(3300);
 Power.setAldo4Millivolt(3300);
 """,
     ),
+    dict(
+        id="StampPLC",
+        name="M5StampPLC",
+        board_id=21,
+        family="Stamp",
+        soc="esp32s3",
+        note="A DIN-rail controller. Its three front buttons are not pins:\n"
+             "they hang off the PI4IO expander, so reading one costs an I2C\n"
+             "transaction and Board.BtnA is rate limited accordingly.\n"
+             "The backlight is the same expander's P7 and is a plain switch -\n"
+             "on or off, nothing between. Board.Backlight.dimmable() says so.\n"
+             "The SD card shares the LCD's SPI bus and is not yet taken out of\n"
+             "SD mode.",
+        i2c_int=(13, 15),
+        i2c_ext=(2, 1),
+        rgb_led=(21, 1),
+        buttons={"A": ("io", "P2"), "B": ("io", "P1"), "C": ("io", "P0")},
+        io_expander="pi4io",
+        backlight=("pi4io_switch", "P7", True),
+        display=dict(bus="spi2", mosi=8, miso=9, sclk=7, dc=6, cs=12, rst=3,
+                     freq_write=40000000, freq_read=16000000,
+                     w=135, h=240, ox=52, oy=40, rotation=1, invert=True,
+                     three_wire=True),
+        power_on="""\
+// The buttons are expander inputs with pull-ups. They also have to come
+// out of high impedance - out of reset every pin on this chip drives
+// nothing. (M5Unified.cpp, the StampPLC case)
+Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P0);
+Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P1);
+Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P2);
+""",
+    ),
 ]
 
 
@@ -431,6 +463,12 @@ POWER_CLASS = {
     "m5pm1": "TinyM5BoardPowerM5pm1",
     "axp2101": "TinyM5BoardPowerAxp2101",
 }
+IOE_CLASS = {
+    "m5ioe1": "TinyM5BoardIoExpanderM5ioe1",
+    "aw9523": "TinyM5BoardIoExpanderAw9523",
+    "pi4io": "TinyM5BoardIoExpanderPi4io",
+}
+
 RAIL_ENUM = {"axp192": "TinyM5BoardPowerAxp192"}
 
 
@@ -498,6 +536,8 @@ def emit_board(entry):
         a('#include "TinyM5Board/IoExpanderM5ioe1.h"\n')
     elif b["io_expander"] == "aw9523":
         a('#include "TinyM5Board/IoExpanderAw9523.h"\n')
+    elif b["io_expander"] == "pi4io":
+        a('#include "TinyM5Board/IoExpanderPi4io.h"\n')
     if b["backlight"]:
         if b["backlight"][0] == "pwm":
             a('#include "TinyM5Board/BacklightPwm.h"\n')
@@ -507,6 +547,8 @@ def emit_board(entry):
             a('#include "TinyM5Board/BacklightCore2.h"\n')
         elif b["backlight"][0] == "m5ioe1_pwm":
             a('#include "TinyM5Board/BacklightM5ioe1.h"\n')
+        elif b["backlight"][0] == "pi4io_switch":
+            a('#include "TinyM5Board/BacklightPi4io.h"\n')
         elif b["backlight"][0].startswith("axp2101_"):
             a('#include "TinyM5Board/BacklightAxp2101.h"\n')
     a("\n")
@@ -535,8 +577,10 @@ def emit_board(entry):
         a("  static constexpr int8_t kRgbLed = -1;\n")
         a("  static constexpr uint8_t kRgbLedCount = 0;\n")
     for name, spec in b["buttons"].items():
-        # -1 says "there is no pin": the key is inside the power chip.
-        pin = -1 if spec == "pek" else button_pin(spec)
+        # -1 says "there is no pin on the SoC": the key is inside the power
+        # chip, or the button hangs off an I/O expander.
+        pin = -1 if (spec == "pek" or (isinstance(spec, tuple) and spec[0] == "io")) \
+            else button_pin(spec)
         a(f"  static constexpr int8_t kBtn{name} = {pin};\n")
     a("\n")
 
@@ -582,9 +626,7 @@ def emit_board(entry):
     if b["io_expander"]:
         a("  // ---- I/O expander ----\n")
         a("  // Not spare pins: at least one line the panel needs is in here.\n")
-        cls_io = ("TinyM5BoardIoExpanderM5ioe1" if b["io_expander"] == "m5ioe1"
-                  else "TinyM5BoardIoExpanderAw9523")
-        a(f"  {cls_io} Io;\n\n")
+        a(f"  {IOE_CLASS[b['io_expander']]} Io;\n\n")
     if b["backlight"]:
         a("  // ---- backlight ----\n")
         if b["backlight"][0] == "pwm":
@@ -601,6 +643,12 @@ def emit_board(entry):
         elif b["backlight"][0].startswith("axp2101_"):
             ch = b["backlight"][0].split("_")[1].capitalize()
             a(f"  TinyM5BoardBacklightAxp2101<TinyM5::Axp2101Light::{ch}> Backlight{{Power}};\n\n")
+        elif b["backlight"][0] == "pi4io_switch":
+            _, pin, active_low = b["backlight"]
+            a(f"  // On/off only - this board has no way to dim.\n"
+              f"  TinyM5BoardBacklightPi4io Backlight{{\n"
+              f"      Io, TinyM5BoardIoExpanderPi4io::Io::{pin}, "
+              f"{'true' if active_low else 'false'}}};\n\n")
         elif b["backlight"][0] == "m5ioe1_pwm":
             _, ch, pin, hz = b["backlight"]
             a(f"  TinyM5BoardBacklightM5ioe1 Backlight{{\n"
@@ -608,10 +656,22 @@ def emit_board(entry):
               f"      TinyM5BoardIoExpanderM5ioe1::Io::{pin}, {hz}}};\n\n")
     if b["buttons"]:
         a("  // ---- buttons ----\n")
+        # Say the I2C thing once rather than beside every button.
+        if any(spec == "pek" or (isinstance(spec, tuple) and spec[0] == "io")
+               for spec in b["buttons"].values()):
+            a("  // Some of these are not pins on the SoC - they live in the\n")
+            a("  // power chip or the expander and are read over I2C, so those\n")
+            a("  // are rate limited to the debounce interval.\n")
         for name, spec in b["buttons"].items():
+            if isinstance(spec, tuple) and spec and spec[0] == "io":
+                a(f"  TinyM5BoardButton Btn{name}{{\n")
+                a("      [](void *p) {\n")
+                a(f"        return !static_cast<{IOE_CLASS[b['io_expander']]} *>(p)->read(\n")
+                a(f"            {IOE_CLASS[b['io_expander']]}::Io::{spec[1]});\n")
+                a("      },\n")
+                a("      &Io, true};\n")
+                continue
             if spec == "pek":
-                a("  // No pin: the power key lives in the PMIC and is read over\n")
-                a("  // I2C, rate limited so update() does not flood the bus.\n")
                 a(f"  TinyM5BoardButton Btn{name}{{\n")
                 a("      [](void *p) {\n")
                 a(f"        return static_cast<{POWER_CLASS[b['pmic']]} *>(p)->isKeyPressed();\n")
@@ -633,7 +693,7 @@ def emit_board(entry):
         a("      Wire1.begin(kI2cExtSda, kI2cExtScl);\n")
     a("    }\n")
     for name, spec in b["buttons"].items():
-        if spec == "pek":
+        if spec == "pek" or (isinstance(spec, tuple) and spec[0] == "io"):
             continue
         mode = "INPUT" if (d["classic"] and 34 <= button_pin(spec) <= 39) else "INPUT_PULLUP"
         a(f"    pinMode(kBtn{name}, {mode});\n")
@@ -658,7 +718,7 @@ def emit_board(entry):
     if b["io_expander"] == "m5ioe1":
         a("    // Same idle-sleep trap as the PMIC, and the same fix.\n")
         a("    const bool ioOk = Io.begin(Wire);\n")
-    elif b["io_expander"] == "aw9523":
+    elif b["io_expander"]:
         a("    const bool ioOk = Io.begin(Wire);\n")
     if b["power_on"]:
         # The catalogue holds the snippet unindented; place it in the body here
@@ -858,6 +918,14 @@ TinyM5Trace::addChip(0, 0x4F, 0x00, 0x01);
 """)
 
 
+PI4IO_MODEL = ("""\
+// The expander is the only chip on this board's bus. Its id register
+// only has to be non-zero, and the button pins read high (released)
+// because the model starts every register at zero... so seed them.
+TinyM5Trace::useChip(0, 0x43, 0x01, 0xA0);
+TinyM5Trace::model().set(0x0F, 0xFF);
+""")
+
 AW9523_MODEL = ("""\
 // The expander answers too, and identifies itself through 0x10.
 TinyM5Trace::addChip(0, 0x58, 0x10, 0x23);
@@ -885,6 +953,8 @@ def variants(b):
         if d["io_expander"] == "m5ioe1":
             return [("", M5PM1_MODEL + M5IOE1_MODEL)]
         return [("", M5PM1_MODEL)]
+    if d["pmic"] is None and d["io_expander"] == "pi4io":
+        return [("", PI4IO_MODEL)]
     if d["pmic"] == "adc":
         pin = d["bat_adc"][0]
         return [("", f"// 2000 mV at the pin, so the golden shows what this board's\n"

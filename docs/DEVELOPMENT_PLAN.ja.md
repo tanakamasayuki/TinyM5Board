@@ -10,11 +10,11 @@
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **12 機種** —— AtomLite / TimerCam / Capsule / StickC / StickCPlus / StickCPlus2 / StickS3 / Station / Tough / Core2 / ChainCaptain / **CoreS3** |
+| ボード定義 | **13 機種** —— AtomLite / TimerCam / Capsule / StickC / StickCPlus / StickCPlus2 / StickS3 / Station / Tough / Core2 / ChainCaptain / CoreS3 / **StampPLC** |
 | 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
-| IO エキスパンダ | `IoExpanderM5ioe1` / **`IoExpanderAw9523`**。PI4IOE5V6408 は未着手 |
+| IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / **`IoExpanderPi4io`**。**主要 3 種が揃った** |
 | バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / **AXP2101 (Bldo1・Dldo1)** / Core2 / M5IOE1 の PWM。**すべて M5GFX と同じカーブ** |
-| ボタン | GPIO と PMIC の電源キーを同じ型で。click カウントは未実装 |
+| ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。click カウントは未実装 |
 | 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセットの表現あり |
 | `tests/begin/` | **13 スケッチ通過。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成 |
@@ -31,6 +31,7 @@
 | StickS3（M5PM1 / ESP32-S3） | 332,736 B |
 | ChainCaptain（M5PM1 + M5IOE1 / ESP32-S3） | 322,017 B |
 | CoreS3（AXP2101 + AW9523B / ESP32-S3） | 320,265 B |
+| StampPLC（PI4IO のみ / ESP32-S3） | 321,329 B |
 
 **二択のまま持つ代金は 480〜776 バイト。**
 
@@ -55,8 +56,11 @@
 ### 1.3 テストの所要時間
 
 `tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
-11 スケッチで約 8 分。**群ごとに並列化してある**ので CI では最長の群の時間で済み、
+14 スケッチで約 10 分。**群ごとに並列化してある**ので CI では最長の群の時間で済み、
 ローカルは `pytest begin/Stick` のように絞れる（約 2 分）。
+
+**Core 群が既に 5 スケッチ**で最長になっている。群がさらに偏るようなら、
+matrix の軸を群からボード単位に落とす（生成できるので workflow は変わらない）。
 
 ## 2. 次にやること
 
@@ -149,8 +153,13 @@ Core2 の PMIC 判別のような分岐も両方通せる。
    ピン割当だけ**（ただし表示バスが AMOLED QSPI / EPD / MIPI-DSI / LED マトリクスと様々）
 8. ~~CoreS3~~ —— 通した。**CoreS3 SE と StackChan は同じ立ち上げ**（違いはカメラと
    2 個目のエキスパンダで、電源にも表示にも関わらない）ので、ほぼコピーで増える
-9. **PI4IOE5V6408** —— StampPLC / Tab5 / Tab5X / NessoN1 / UnitC6L
+9. ~~PI4IOE5V6408~~ —— 通した。**NessoN1 はエキスパンダ 2 個で同じ形**
 10. 残りの画面なしボード —— ピン表だけで済むものが多い
+
+**電源と IO の側は主要なチップが出揃った。**
+AXP192 / AXP2101 / M5PM1 / ADC と、M5IOE1 / AW9523B / PI4IO。
+残るボードの大半は**カタログにピンを書くだけ**で届く。
+届かないのは表示バスが SPI でない機種で、それは §2-7 の宿題。
 
 ### 2-7. 積んである宿題
 

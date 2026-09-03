@@ -57,8 +57,9 @@ class TinyM5BoardTough {
   TinyM5BoardBacklightAxp192<TinyM5::Axp192Light::Ldo3> Backlight{Power};
 
   // ---- buttons ----
-  // No pin: the power key lives in the PMIC and is read over
-  // I2C, rate limited so update() does not flood the bus.
+  // Some of these are not pins on the SoC - they live in the
+  // power chip or the expander and are read over I2C, so those
+  // are rate limited to the debounce interval.
   TinyM5BoardButton BtnPwr{
       [](void *p) {
         return static_cast<TinyM5BoardPowerAxp192 *>(p)->isKeyPressed();

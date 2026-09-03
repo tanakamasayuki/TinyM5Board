@@ -104,15 +104,16 @@ PMIC の中と素の GPIO に分かれる**（StickC Plus2 は `35`）。
 
 ### 2.3.1 IO エキスパンダ
 
-| 列 | 例 |
-| --- | --- |
-| `io_expander` | `"m5ioe1"` / 省略 |
+| 列 | 例 | 使うボード |
+| --- | --- | --- |
+| `io_expander` | `"m5ioe1"` | StopWatch / PaperMono / ChainCaptain / CoreP4X / ToughC5 / CoreMatrix |
+| | `"aw9523"` | CoreS3 / CoreS3SE / StackChan |
+| | `"pi4io"` | StampPLC / Tab5 / Tab5X / NessoN1 |
+| | 省略 | エキスパンダを持たない |
 
-M5IOE1 を積む 6 機種（StopWatch / PaperMono / ChainCaptain / CoreP4X /
-ToughC5 / CoreMatrix）で使う。**パネルの電源もリセットもバックライトも
-このチップの中**なので、これらのボードでは SoC の GPIO が画面に一切触らない。
-
-`Board.Io` として生え、`power_on` からピンを名前で叩く。
+**エキスパンダは「余ったピン」ではない。** ChainCaptain はパネルの電源も
+リセットもバックライトもこの中、CoreS3 はリセットが P1_1、**StampPLC は
+前面のボタン 3 つがここ**。`Board.Io` として生え、`power_on` から名前で叩く。
 
 ### 2.4 バックライト
 
@@ -121,6 +122,8 @@ ToughC5 / CoreMatrix）で使う。**パネルの電源もリセットもバッ�
 | `("pwm", 27, 256, 40)` | `(方式, ピン, Hz, duty offset)`。**実装済み** |
 | `("axp192_ldo2",)` | AXP192 の LDO2 電圧を明るさに使う。**実装済み** |
 | `("m5ioe1_pwm", "Ch3", "Io11", 1000)` | `(方式, チャネル, その IO, Hz)`。**実装済み** |
+| `("axp2101_dldo1",)` / `("axp2101_bldo1",)` | AXP2101 のレール電圧。**実装済み** |
+| `("pi4io_switch", "P7", True)` | `(方式, ピン, active-low か)`。**ON/OFF のみで調光できない**。`Backlight.dimmable()` が `false` を返す |
 | 省略 | バックライトを持たない（EPD / OLED / LED / 画面なし） |
 
 輝度カーブは方式ごとに決まるので**列に持たない**。
