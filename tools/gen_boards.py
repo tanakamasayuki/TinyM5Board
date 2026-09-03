@@ -365,6 +365,51 @@ pinMode(21, OUTPUT);
 digitalWrite(21, LOW);
 """,
     ),
+    dict(
+        id="CoreS3",
+        name="M5StackCoreS3",
+        board_id=10,
+        family="Core",
+        soc="esp32s3",
+        note="An AXP2101 for power and an AW9523B for the rest. The panel's\n"
+             "reset is P1_1 on the expander, so no pin on the SoC touches it.\n"
+             "The CoreS3 SE and the StackChan share this bring-up; they differ\n"
+             "only in the camera and a second expander, neither of which is\n"
+             "power or display.\n"
+             "**GPIO 35 is both the SPI MISO and the panel's D/C.** A graphics\n"
+             "library driving this screen has to re-point that pin on every CS\n"
+             "transition; this library reports both roles and does not perform\n"
+             "that trick - it belongs inside the SPI transaction layer.\n"
+             "Its A/B/C are touch zones, not GPIOs. The SD card shares the\n"
+             "LCD's SPI bus and is not yet taken out of SD mode.",
+        i2c_int=(12, 11),
+        i2c_ext=(2, 1),
+        buttons={"Pwr": "pek"},
+        pmic="axp2101",
+        io_expander="aw9523",
+        backlight=("axp2101_dldo1",),
+        display=dict(bus="spi2", mosi=37, miso=35, sclk=36, dc=35, cs=3, rst=-1,
+                     freq_write=40000000, freq_read=16000000,
+                     w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
+                     three_wire=True),
+        power_on="""\
+// Every one of the sixteen expander pins comes up in LED-driver mode, so
+// saying "these are GPIOs" is not optional. 1 = input for the direction,
+// 1 = plain GPIO for the mode. (M5GFX.cpp, the CoreS3 branch)
+Io.setDirections(0b00011000, 0b00001100);
+Io.setPushPullP0();
+Io.setGpioMode(0xFF, 0xFF);
+// P1_0 and P1_1 high: the second is the panel's reset line. The VBUS 5V
+// output (P1_7) is left off - see the note above.
+Io.setOutputs(0b00000101, 0b00000011);
+Io.resetPulse(TinyM5BoardIoExpanderAw9523::Io::P1_1);
+// ALDO3 feeds the camera and ALDO4 the TF slot; both want 3.3 V, and the
+// enable pattern is what this board's schematic asks for.
+Power.setLdoEnables(0xBF);
+Power.setAldo3Millivolt(3300);
+Power.setAldo4Millivolt(3300);
+""",
+    ),
 ]
 
 
@@ -384,6 +429,7 @@ POWER_CLASS = {
     "axp192": "TinyM5BoardPowerAxp192",
     "core2": "TinyM5BoardPowerCore2",
     "m5pm1": "TinyM5BoardPowerM5pm1",
+    "axp2101": "TinyM5BoardPowerAxp2101",
 }
 RAIL_ENUM = {"axp192": "TinyM5BoardPowerAxp192"}
 
@@ -442,12 +488,16 @@ def emit_board(entry):
         a('#include "TinyM5Board/PowerAdc.h"\n')
     elif b["pmic"] == "axp192":
         a('#include "TinyM5Board/PowerAxp192.h"\n')
+    elif b["pmic"] == "axp2101":
+        a('#include "TinyM5Board/PowerAxp2101.h"\n')
     elif b["pmic"] == "core2":
         a('#include "TinyM5Board/PowerCore2.h"\n')
     elif b["pmic"] == "m5pm1":
         a('#include "TinyM5Board/PowerM5pm1.h"\n')
     if b["io_expander"] == "m5ioe1":
         a('#include "TinyM5Board/IoExpanderM5ioe1.h"\n')
+    elif b["io_expander"] == "aw9523":
+        a('#include "TinyM5Board/IoExpanderAw9523.h"\n')
     if b["backlight"]:
         if b["backlight"][0] == "pwm":
             a('#include "TinyM5Board/BacklightPwm.h"\n')
@@ -457,6 +507,8 @@ def emit_board(entry):
             a('#include "TinyM5Board/BacklightCore2.h"\n')
         elif b["backlight"][0] == "m5ioe1_pwm":
             a('#include "TinyM5Board/BacklightM5ioe1.h"\n')
+        elif b["backlight"][0].startswith("axp2101_"):
+            a('#include "TinyM5Board/BacklightAxp2101.h"\n')
     a("\n")
 
     a(f"class {cls} {{\n public:\n")
@@ -518,17 +570,21 @@ def emit_board(entry):
         rails = " | ".join(f"TinyM5BoardPowerM5pm1::{r}" for r in b["rails"]) or "0"
         a("  // ---- power ----\n")
         a(f"  TinyM5BoardPowerM5pm1 Power{{{rails}}};\n\n")
+    elif b["pmic"] == "axp2101":
+        a("  // ---- power ----\n")
+        a("  TinyM5BoardPowerAxp2101 Power;\n\n")
     elif b["pmic"] == "core2":
         a("  // ---- power ----\n")
         a("  // Two chips are possible under this one product name, so the\n")
         a("  // bring-up, the panel reset and the backlight all live behind\n")
         a("  // this one object. It asks the chip which it is.\n")
         a("  TinyM5BoardPowerCore2 Power;\n\n")
-    if b["io_expander"] == "m5ioe1":
+    if b["io_expander"]:
         a("  // ---- I/O expander ----\n")
-        a("  // Not spare pins: the panel's supply, its reset line and the\n")
-        a("  // backlight all live on this chip.\n")
-        a("  TinyM5BoardIoExpanderM5ioe1 Io;\n\n")
+        a("  // Not spare pins: at least one line the panel needs is in here.\n")
+        cls_io = ("TinyM5BoardIoExpanderM5ioe1" if b["io_expander"] == "m5ioe1"
+                  else "TinyM5BoardIoExpanderAw9523")
+        a(f"  {cls_io} Io;\n\n")
     if b["backlight"]:
         a("  // ---- backlight ----\n")
         if b["backlight"][0] == "pwm":
@@ -539,6 +595,12 @@ def emit_board(entry):
             a(f"  TinyM5BoardBacklightAxp192<TinyM5::Axp192Light::{ch}> Backlight{{Power}};\n\n")
         elif b["backlight"][0] == "core2":
             a("  TinyM5BoardBacklightCore2 Backlight{Power};\n\n")
+        elif b["backlight"][0].startswith("axp2101_"):
+            ch = b["backlight"][0].split("_")[1].capitalize()
+            a(f"  TinyM5BoardBacklightAxp2101<TinyM5::Axp2101Light::{ch}> Backlight{{Power}};\n\n")
+        elif b["backlight"][0].startswith("axp2101_"):
+            ch = b["backlight"][0].split("_")[1].capitalize()
+            a(f"  TinyM5BoardBacklightAxp2101<TinyM5::Axp2101Light::{ch}> Backlight{{Power}};\n\n")
         elif b["backlight"][0] == "m5ioe1_pwm":
             _, ch, pin, hz = b["backlight"]
             a(f"  TinyM5BoardBacklightM5ioe1 Backlight{{\n"
@@ -586,6 +648,8 @@ def emit_board(entry):
         a("    // both survive a power cycle and both can make this board look\n")
         a("    // dead if something else set them.\n")
         a("    const bool ok = Power.begin(Wire);\n")
+    elif b["pmic"] == "axp2101":
+        a("    const bool ok = Power.begin(Wire);\n")
     elif b["pmic"] == "core2":
         a("    // Asks the chip which of the two it is, then runs that one's\n")
         a("    // bring-up - including the panel reset, which is a rail on one\n")
@@ -593,6 +657,8 @@ def emit_board(entry):
         a("    const bool ok = Power.begin(Wire);\n")
     if b["io_expander"] == "m5ioe1":
         a("    // Same idle-sleep trap as the PMIC, and the same fix.\n")
+        a("    const bool ioOk = Io.begin(Wire);\n")
+    elif b["io_expander"] == "aw9523":
         a("    const bool ioOk = Io.begin(Wire);\n")
     if b["power_on"]:
         # The catalogue holds the snippet unindented; place it in the body here
@@ -604,7 +670,7 @@ def emit_board(entry):
         a(f"    TinyM5::resetPulse({b['display']['rst']});\n")
     if b["backlight"]:
         a("    Backlight.begin();\n")
-    ret = "ok" if b["pmic"] in ("axp192", "core2", "m5pm1") else "true"
+    ret = "ok" if b["pmic"] in ("axp192", "axp2101", "core2", "m5pm1") else "true"
     if b["io_expander"]:
         ret = f"{ret} && ioOk"
     a(f"    return {ret};\n  }}\n\n")
@@ -792,6 +858,12 @@ TinyM5Trace::addChip(0, 0x4F, 0x00, 0x01);
 """)
 
 
+AW9523_MODEL = ("""\
+// The expander answers too, and identifies itself through 0x10.
+TinyM5Trace::addChip(0, 0x58, 0x10, 0x23);
+""")
+
+
 def variants(b):
     """One test per chip a board could be carrying.
 
@@ -804,6 +876,11 @@ def variants(b):
         return [("Axp192", AXP192_MODEL), ("Axp2101", AXP2101_MODEL)]
     if d["pmic"] == "axp192":
         return [("", AXP192_MODEL)]
+    if d["pmic"] == "axp2101":
+        model = AXP2101_MODEL
+        if d["io_expander"] == "aw9523":
+            model += AW9523_MODEL
+        return [("", model)]
     if d["pmic"] == "m5pm1":
         if d["io_expander"] == "m5ioe1":
             return [("", M5PM1_MODEL + M5IOE1_MODEL)]

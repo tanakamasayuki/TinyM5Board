@@ -14,6 +14,7 @@ enum class BoardId : uint16_t {
   StickC = 6,
   Tough = 8,
   Station = 9,
+  CoreS3 = 10,
   StickCPlus = 13,
   StickCPlus2 = 17,
   StickS3 = 26,

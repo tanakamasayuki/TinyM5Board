@@ -107,6 +107,23 @@ class TinyM5BoardPowerAxp2101 {
   /// from its live state.
   bool isKeyPressed() { return getKeyState() != 0; }
 
+  // ---- rails ----
+  //
+  // Register 0x90 switches the A/B/D LDOs, one bit each. Which of them
+  // feeds what is board knowledge, so a board header names the pattern
+  // its schematic implies rather than the bits.
+
+  void setLdoEnables(uint8_t mask) { _reg.write8(0x90, mask); }
+
+  /// 500-3500 mV in 100 mV steps. The chip counts from 500 mV as zero.
+  void setAldo3Millivolt(uint16_t mv) { _reg.write8(0x94, step(mv)); }
+  void setAldo4Millivolt(uint16_t mv) { _reg.write8(0x95, step(mv)); }
+
+  static constexpr uint8_t step(uint16_t mv)
+  {
+    return mv <= 500 ? 0 : (uint8_t)((mv - 500) / 100);
+  }
+
   TinyM5::I2cReg &reg() { return _reg; }
 
  private:

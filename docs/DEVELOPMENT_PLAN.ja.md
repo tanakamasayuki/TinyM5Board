@@ -10,13 +10,13 @@
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **11 機種** —— AtomLite / TimerCam / Capsule / StickC / StickCPlus / StickCPlus2 / StickS3 / Station / Tough / Core2 / **ChainCaptain** |
+| ボード定義 | **12 機種** —— AtomLite / TimerCam / Capsule / StickC / StickCPlus / StickCPlus2 / StickS3 / Station / Tough / Core2 / ChainCaptain / **CoreS3** |
 | 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
-| IO エキスパンダ | **`IoExpanderM5ioe1`**。AW9523B / PI4IOE5V6408 は未着手 |
-| バックライト | PWM / AXP192 の Ldo2・Ldo3・Dc3 / Core2 / **M5IOE1 の PWM**。**すべて M5GFX と同じカーブ** |
+| IO エキスパンダ | `IoExpanderM5ioe1` / **`IoExpanderAw9523`**。PI4IOE5V6408 は未着手 |
+| バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / **AXP2101 (Bldo1・Dldo1)** / Core2 / M5IOE1 の PWM。**すべて M5GFX と同じカーブ** |
 | ボタン | GPIO と PMIC の電源キーを同じ型で。click カウントは未実装 |
 | 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセットの表現あり |
-| `tests/begin/` | **12 スケッチ通過。群ごとのディレクトリ**で、CI の matrix 軸もこれ。**1 バスに複数チップ**のモデルに対応 |
+| `tests/begin/` | **13 スケッチ通過。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成 |
 | 利用者向け README | **無い。** 機種が揃ってから |
 
@@ -30,6 +30,7 @@
 | StickC（AXP192） | 314,144 B |
 | StickS3（M5PM1 / ESP32-S3） | 332,736 B |
 | ChainCaptain（M5PM1 + M5IOE1 / ESP32-S3） | 322,017 B |
+| CoreS3（AXP2101 + AW9523B / ESP32-S3） | 320,265 B |
 
 **二択のまま持つ代金は 480〜776 バイト。**
 
@@ -146,7 +147,8 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 7. ~~M5IOE1~~ —— ドライバは書けた。ChainCaptain で通した。
    **同じ 2 チップ構成の StopWatch / PaperMono / CoreP4X / ToughC5 / CoreMatrix は
    ピン割当だけ**（ただし表示バスが AMOLED QSPI / EPD / MIPI-DSI / LED マトリクスと様々）
-8. **CoreS3 系** —— AXP2101 は済んでいるが AW9523B が要る
+8. ~~CoreS3~~ —— 通した。**CoreS3 SE と StackChan は同じ立ち上げ**（違いはカメラと
+   2 個目のエキスパンダで、電源にも表示にも関わらない）ので、ほぼコピーで増える
 9. **PI4IOE5V6408** —— StampPLC / Tab5 / Tab5X / NessoN1 / UnitC6L
 10. 残りの画面なしボード —— ピン表だけで済むものが多い
 
@@ -156,6 +158,8 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 | --- | --- |
 | **SD の SPI モード落とし** | Core2 / Tough / M5Stack / CoreS3 / StampPLC / PaperColor / Paper は SD が LCD と同じ SPI バスに載る。SD モードのままだとバス上で応答してパネル ID 読みを壊す。**責務としては持つと決めている**（REQUIREMENTS §4.2）が未実装 |
 | Button の click カウント | `wasClicked` / `wasDoubleClicked` / `getClickCount` が未実装 |
+| **SPI 以外の表示バス** | `TinyM5::Display` は SPI 前提。StopWatch (AMOLED QSPI) / PaperMono (EPD) / CoreP4X (MIPI-DSI) / CoreMatrix (LED マトリクスの I2C) はこの構造体に入らない。**電源側はもう届いている**ので、次に大きい設計判断はここ |
+| CoreS3 の GPIO35 兼用 | MISO と D/C を共有しており、CS のたびに GPIO マトリクスの書き換えが要る。**SPI トランザクション層の話なので GFX の領分**。諸元では両方の役割を報告し、注記している |
 
 ### 2-6. ~~host-arduino-core への要望~~ —— 1.6.0 で解決
 
