@@ -17,12 +17,20 @@ enum class BoardId : uint16_t {
   CoreS3 = 10,
   StickCPlus = 13,
   StickCPlus2 = 17,
+  CoreS3SE = 17,
   StampPLC = 21,
   StickS3 = 26,
+  StackChan = 27,
   ChainCaptain = 32,
   AtomLite = 128,
+  AtomU = 130,
   TimerCam = 132,
+  StampPico = 133,
+  AtomS3Lite = 137,
+  AtomS3U = 138,
   Capsule = 139,
+  AtomMatrix = 141,
+  AtomVoice = 142,
 };
 
 }  // namespace TinyM5

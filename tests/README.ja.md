@@ -11,8 +11,8 @@ cd tests
 uv sync
 uv run pytest --profile host          # 全部
 uv run pytest unit --profile host     # ボードに依らないクラス。約 7 秒
-uv run pytest tier0                   # 全機種のヘッダを実物のコアで。約 90 秒
-uv run pytest begin --profile host    # 立ち上げのゴールデン。約 5〜8 分
+uv run pytest tier0                   # 全機種のヘッダを実物のコアで。約 2 分
+uv run pytest begin --profile host    # 立ち上げのゴールデン。約 3 分
 ```
 
 **コアは `arduino-cli core install` で入れない。** 各テストの `sketch.yaml` に
@@ -25,8 +25,8 @@ uv run pytest begin --profile host    # 立ち上げのゴールデン。約 5�
 GitHub Actions の matrix の軸で、ローカルでも同じ単位で絞れる。
 
 ```sh
-uv run pytest begin/Stick --profile host    # 3 機種、約 2 分
-uv run pytest begin --profile host          # 全部、約 5〜8 分
+uv run pytest begin/Stick --profile host    # 4 機種、約 30 秒
+uv run pytest begin --profile host          # 22 スケッチ、約 3 分
 ```
 
 1 本ごとにスケッチをビルドして実行するので、**所要時間は機種数に線形**。
@@ -50,7 +50,7 @@ FQBN は機種名ではなく **SoC の Dev Module**。ボード variant が持�
 ピン別名とフラッシュ配置で、このライブラリはどちらも読まない。
 
 ```sh
-uv run pytest tier0                  # 約 90 秒。--profile は要らない
+uv run pytest tier0                  # 約 2 分。--profile は要らない
 uv run pytest tier0 -k StickC        # 1 機種だけ
 ```
 

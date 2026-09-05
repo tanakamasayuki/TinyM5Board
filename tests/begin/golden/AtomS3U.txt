@@ -1,0 +1,8 @@
+--- begin() ---
+i2c0 begin sda=38 scl=39 hz=100000
+i2c1 begin sda=2 scl=1 hz=100000
+pinMode(41, INPUT_PULLUP)
+--- board ---
+name=M5AtomS3U id=138
+pins i2c=38/39 ext=2/1 led=35/1 hold=-1
+has display=0 backlight=0 battery=0 extI2c=1 shared=0

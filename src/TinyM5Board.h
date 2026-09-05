@@ -35,6 +35,16 @@
 #include TINYM5_BOARD_HEADER
 #elif defined(TINYM5_ATOMLITE)
 #include "TinyM5BoardAtomLite.h"
+#elif defined(TINYM5_ATOMMATRIX)
+#include "TinyM5BoardAtomMatrix.h"
+#elif defined(TINYM5_ATOMU)
+#include "TinyM5BoardAtomU.h"
+#elif defined(TINYM5_ATOMVOICE)
+#include "TinyM5BoardAtomVoice.h"
+#elif defined(TINYM5_ATOMS3LITE)
+#include "TinyM5BoardAtomS3Lite.h"
+#elif defined(TINYM5_ATOMS3U)
+#include "TinyM5BoardAtomS3U.h"
 #elif defined(TINYM5_TIMERCAM)
 #include "TinyM5BoardTimerCam.h"
 #elif defined(TINYM5_CAPSULE)
@@ -57,6 +67,12 @@
 #include "TinyM5BoardChainCaptain.h"
 #elif defined(TINYM5_CORES3)
 #include "TinyM5BoardCoreS3.h"
+#elif defined(TINYM5_CORES3SE)
+#include "TinyM5BoardCoreS3SE.h"
+#elif defined(TINYM5_STACKCHAN)
+#include "TinyM5BoardStackChan.h"
+#elif defined(TINYM5_STAMPPICO)
+#include "TinyM5BoardStampPico.h"
 #elif defined(TINYM5_STAMPPLC)
 #include "TinyM5BoardStampPLC.h"
 #else

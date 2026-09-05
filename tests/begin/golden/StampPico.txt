@@ -1,0 +1,8 @@
+--- begin() ---
+i2c0 begin sda=21 scl=22 hz=100000
+i2c1 begin sda=32 scl=33 hz=100000
+pinMode(39, INPUT)
+--- board ---
+name=M5StampPico id=133
+pins i2c=21/22 ext=32/33 led=27/1 hold=-1
+has display=0 backlight=0 battery=0 extI2c=1 shared=0

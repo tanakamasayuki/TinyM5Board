@@ -1,0 +1,10 @@
+--- begin() ---
+i2c0 begin sda=25 scl=21 hz=100000
+i2c1 begin sda=26 scl=32 hz=100000
+pinMode(39, INPUT)
+pinMode(0, OUTPUT)
+digitalWrite(0, 1)
+--- board ---
+name=M5AtomU id=130
+pins i2c=25/21 ext=26/32 led=27/1 hold=-1
+has display=0 backlight=0 battery=0 extI2c=1 shared=0

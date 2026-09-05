@@ -66,7 +66,7 @@ FQBN は**そのボードの機種名ではなく SoC の Dev Module**（`esp32:
 `-D` でボードを注入する形は取らなかった。マクロはスケッチに書いてある。
 生成するので手間は同じで、**ビルドプロパティ経由の引用符に依存しない。**
 
-13 機種 + 入口 2 本で**約 90 秒**。
+21 機種 + 入口 2 本で**約 2 分**。
 
 ## 3. Tier 1 —— 初期化列のゴールデン（ホスト実行）
 
@@ -303,12 +303,13 @@ run: uv run pytest "begin/${{ matrix.family }}" --profile host
 ローカルでも同じ単位で絞れる。
 
 ```sh
-uv run pytest begin/Stick --profile host    # 3 機種、約 2 分
-uv run pytest begin --profile host          # 全部、約 5〜8 分
+uv run pytest begin/Stick --profile host    # 4 機種、約 30 秒
+uv run pytest begin --profile host          # 全部、22 スケッチで約 3 分
 ```
 
 **必要な理由**: `begin` のテストは 1 本ごとにスケッチをビルドして実行するので、
-所要時間が機種数に線形に伸びる。10 スケッチで 5〜8 分、**60 機種なら 30 分を超える。**
+所要時間が機種数に線形に伸びる。**1 スケッチ約 8 秒**なので、
+60 機種なら 1 ジョブで 8 分を超える。
 
 結果が群単位で出るのは副産物だが効く（[DECISIONS.ja.md](DECISIONS.ja.md) D19）。
 64 機種の緑ランプより「Stick 系 全機種通過」のほうが読める。

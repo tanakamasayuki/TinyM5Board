@@ -4,20 +4,21 @@
 
 ## 1. 現在地
 
-**10 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統がホストのゴールデンと実機ビルドまで通っている。**
+**21 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
+実物のツールチェーンのビルド（Tier 0）まで通っている。**
 
 | 項目 | 状況 |
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **13 機種** —— AtomLite / TimerCam / Capsule / StickC / StickCPlus / StickCPlus2 / StickS3 / Station / Tough / Core2 / ChainCaptain / CoreS3 / **StampPLC** |
+| ボード定義 | **21 機種** —— Atom: AtomLite / **AtomMatrix** / **AtomU** / **AtomVoice** / **AtomS3Lite** / **AtomS3U**、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / **CoreS3SE** / **StackChan**、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: **StampPico** / StampPLC、Other: TimerCam / Capsule |
 | 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
 | IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / **`IoExpanderPi4io`**。**主要 3 種が揃った** |
 | バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / **AXP2101 (Bldo1・Dldo1)** / Core2 / M5IOE1 の PWM。**すべて M5GFX と同じカーブ** |
 | ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。**click / hold / click カウントまで M5Unified と同じ状態機械**（D36） |
 | 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセットの表現あり |
-| `tests/begin/` | **13 スケッチ通過。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
-| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（約 90 秒） |
+| `tests/begin/` | **22 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
+| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（21 機種 + 入口 2 本 / 約 2 分半） |
 | `tests/unit/` | **ボード非依存のクラス**の検査。いまは Button の状態機械 1 本（39 検査 / 約 7 秒） |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` は別ジョブ |
 | `keywords.txt` | **あり。** `gen_boards.py` が**ヘッダを読み直して**生成する |
@@ -64,14 +65,14 @@
 ### 1.3 テストの所要時間
 
 `tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
-14 スケッチで約 10 分。**群ごとに並列化してある**ので CI では最長の群の時間で済み、
+22 スケッチで約 3 分（ローカル実測）。**群ごとに並列化してある**ので CI では最長の群の時間で済み、
 ローカルは `pytest begin/Stick` のように絞れる（約 2 分）。
 
-`tests/tier0` は 15 本ビルドして**約 90 秒**、`tests/unit` は 1 本で**約 7 秒**。
+`tests/tier0` は 23 本ビルドして**約 2 分半**、`tests/unit` は 1 本で**約 7 秒**。
 どちらも機種数に線形だが、実行が無い分だけ安い。
 ボード非依存の変更は `unit` だけ回せばよい。
 
-**Core 群が既に 5 スケッチ**で最長になっている。群がさらに偏るようなら、
+**Core 群が 7 スケッチ**（Core2 が 2 本）で最長になっている。群がさらに偏るようなら、
 matrix の軸を群からボード単位に落とす（生成できるので workflow は変わらない）。
 
 ## 2. 次にやること
@@ -114,6 +115,13 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 | Arduino Core が宣言するピン | [variants_collector](https://github.com/tanakamasayuki/variants_collector)（`src/variants_collector.h`。M5 向けの override つき） |
 
 すべて MIT。
+
+**取り込んだ時点を書いておく。** 凍結モデル（TEST_PLAN §1）では
+「いつの上流から起こした値か」だけが後から効く。
+
+| 取り込み | 対象 | 上流 |
+| --- | --- | --- |
+| 2026-09-05 | AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U / StampPico / CoreS3SE / StackChan | M5Unified・M5GFX の `master`（`_pin_table_*`、ボタンの `switch`、`boards.hpp`、CoreS3 の分岐） |
 
 **M5PM1 の電源系レジスタは M5GFX からは分からない。**
 表示系（`0x00` `0x06` `0x09` `0x0A` `0x10` `0x11` `0x13` `0x16` `0x30`-`0x31` `0x34`-`0x35`）しか
@@ -165,10 +173,15 @@ Core2 の PMIC 判別のような分岐も両方通せる。
 7. ~~M5IOE1~~ —— ドライバは書けた。ChainCaptain で通した。
    **同じ 2 チップ構成の StopWatch / PaperMono / CoreP4X / ToughC5 / CoreMatrix は
    ピン割当だけ**（ただし表示バスが AMOLED QSPI / EPD / MIPI-DSI / LED マトリクスと様々）
-8. ~~CoreS3~~ —— 通した。**CoreS3 SE と StackChan は同じ立ち上げ**（違いはカメラと
-   2 個目のエキスパンダで、電源にも表示にも関わらない）ので、ほぼコピーで増える
+8. ~~CoreS3~~ —— 通した。**CoreS3SE / StackChan も通した。**
+   上流も 3 機種で 1 つの分岐なので、`CORE_S3_POWER_ON` を 3 エントリで共有している
+   （違いはカメラと servo 側のエキスパンダで、電源にも表示にも関わらない）
 9. ~~PI4IOE5V6408~~ —— 通した。**NessoN1 はエキスパンダ 2 個で同じ形**
-10. 残りの画面なしボード —— ピン表だけで済むものが多い
+10. 画面なしボード —— **AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U /
+    StampPico を通した。** どれもピン表と識別子だけで、`power_on` を書いたものは無い
+    （CH552 の GPIO0 バイアスは AtomLite と共有する定数にした）。
+    残りは StampS3 系のように**内部 I2C を持たない**形が出てくるので、
+    そこは `i2c_int` を省略可にする話になる
 
 **電源と IO の側は主要なチップが出揃った。**
 AXP192 / AXP2101 / M5PM1 / ADC と、M5IOE1 / AW9523B / PI4IO。

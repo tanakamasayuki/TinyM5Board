@@ -1,0 +1,49 @@
+--- begin() ---
+i2c0 begin sda=12 scl=11 hz=100000
+i2c1 begin sda=2 scl=1 hz=100000
+i2c0 write 0x34 [03] (no stop)
+i2c0 read  0x34 1 -> [4A]
+i2c0 write 0x34 [30 3F]
+i2c0 write 0x58 [10] (no stop)
+i2c0 read  0x58 1 -> [23]
+i2c0 write 0x58 [04 18]
+i2c0 write 0x58 [05 0C]
+i2c0 write 0x58 [11 10]
+i2c0 write 0x58 [12 FF]
+i2c0 write 0x58 [13 FF]
+i2c0 write 0x58 [02] (no stop)
+i2c0 read  0x58 1 -> [00]
+i2c0 write 0x58 [02 05]
+i2c0 write 0x58 [03] (no stop)
+i2c0 read  0x58 1 -> [00]
+i2c0 write 0x58 [03 03]
+i2c0 write 0x58 [03] (no stop)
+i2c0 read  0x58 1 -> [03]
+i2c0 write 0x58 [03 03]
+i2c0 write 0x58 [03] (no stop)
+i2c0 read  0x58 1 -> [03]
+i2c0 write 0x58 [03 01]
+i2c0 write 0x58 [03] (no stop)
+i2c0 read  0x58 1 -> [01]
+i2c0 write 0x58 [03 03]
+i2c0 write 0x34 [90 BF]
+i2c0 write 0x34 [94 1C]
+i2c0 write 0x34 [95 1C]
+i2c0 write 0x34 [90] (no stop)
+i2c0 read  0x34 1 -> [BF]
+i2c0 write 0x34 [90 BF]
+i2c0 write 0x34 [99 18]
+--- board ---
+name=M5StackCoreS3SE id=17
+pins i2c=12/11 ext=2/1 led=-1/0 hold=-1
+has display=1 backlight=1 battery=1 extI2c=1 shared=0
+--- display ---
+spi mosi=37 miso=35 sclk=36 dc=35 cs=3 rst=-1 3wire=1
+freq write=40000000 read=16000000
+panel 320x240 offset=0,0 rotation=3 invert=1
+--- battery ---
+i2c0 write 0x34 [A4] (no stop)
+i2c0 read  0x34 1 -> [57]
+i2c0 write 0x34 [34] (no stop)
+i2c0 read  0x34 2 -> [0F A0]
+mV=4000 level=87

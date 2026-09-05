@@ -83,6 +83,41 @@ SOC = {
 # i2c_int / i2c_ext are (sda, scl). rgb_led is (pin, count).
 # buttons maps a name to a pin, or to (pin, active_low).
 
+# Bring-up that more than one board shares, written once. Upstream shares
+# it the same way - several `case` labels falling into one body - and a
+# copy per entry is a copy that drifts.
+
+ATOM_CH552_FIX = """\
+// The CH552 USB bridge puts 4 V on GPIO 0, which drags the WiFi
+// sensitivity down. Driving the pin high from this side biases it to
+// 3.3 V and suppresses the overvoltage. (M5Unified.cpp:2299)
+pinMode(0, OUTPUT);
+digitalWrite(0, HIGH);
+"""
+
+# The CoreS3, the CoreS3 SE and the StackChan are one branch upstream, in
+# M5GFX and in M5Unified alike. What tells them apart is a camera and a
+# servo expander, and neither is a rail or a panel.
+CORE_S3_POWER_ON = """\
+// Every one of the sixteen expander pins comes up in LED-driver mode, so
+// saying "these are GPIOs" is not optional. 1 = input for the direction,
+// 1 = plain GPIO for the mode. (M5GFX.cpp, the CoreS3 branch)
+Io.setDirections(0b00011000, 0b00001100);
+Io.setPushPullP0();
+Io.setGpioMode(0xFF, 0xFF);
+// P1_0 and P1_1 high: the second is the panel's reset line. The VBUS 5V
+// output (P1_7) is left off - see the note above.
+Io.setOutputs(0b00000101, 0b00000011);
+Io.resetPulse(TinyM5BoardIoExpanderAw9523::Io::P1_1);
+// ALDO3 is the camera rail and ALDO4 the TF slot. Upstream enables both
+// on all three of these boards, including the SE that has no camera, so
+// this is transcribed rather than trimmed.
+Power.setLdoEnables(0xBF);
+Power.setAldo3Millivolt(3300);
+Power.setAldo4Millivolt(3300);
+"""
+
+
 BOARDS = [
     dict(
         id="AtomLite",
@@ -101,13 +136,105 @@ BOARDS = [
         pmic=None,
         backlight=None,
         display=None,
-        power_on="""\
-// The CH552 USB bridge puts 4 V on GPIO 0, which drags the WiFi
-// sensitivity down. Driving the pin high from this side biases it to
-// 3.3 V and suppresses the overvoltage. (M5Unified.cpp:2299)
-pinMode(0, OUTPUT);
-digitalWrite(0, HIGH);
-""",
+        power_on=ATOM_CH552_FIX,
+    ),
+    dict(
+        id="AtomMatrix",
+        name="M5AtomMatrix",
+        board_id=141,
+        family="Atom",
+        soc="esp32",
+        note="The ATOM with a 5x5 RGB LED matrix on the front, and the front\n"
+             "panel itself as the button. The pinout is the ATOM Lite's; the\n"
+             "LED count is what differs, and a count is not something a sketch\n"
+             "can probe for.",
+        i2c_int=(25, 21),
+        i2c_ext=(26, 32),
+        power_hold=None,
+        rgb_led=(27, 25),
+        buttons={"A": 39},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on=ATOM_CH552_FIX,
+    ),
+    dict(
+        id="AtomU",
+        name="M5AtomU",
+        board_id=130,
+        family="Atom",
+        soc="esp32",
+        note="The ATOM in a USB-A plug, with a microphone. Same pins, same\n"
+             "button and the same single LED as the ATOM Lite - the shell and\n"
+             "the identity are what differ.",
+        i2c_int=(25, 21),
+        i2c_ext=(26, 32),
+        power_hold=None,
+        rgb_led=(27, 1),
+        buttons={"A": 39},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on=ATOM_CH552_FIX,
+    ),
+    dict(
+        id="AtomVoice",
+        name="M5AtomVoice",
+        board_id=142,
+        family="Atom",
+        soc="esp32",
+        note="The ATOM with a speaker and a microphone. Sold as the ATOM Echo;\n"
+             "upstream renamed the identifier and kept board_M5AtomEcho as a\n"
+             "deprecated alias for the same id, 142.\n"
+             "Audio is a device rather than bring-up, so what this header\n"
+             "carries is the ATOM Lite's pinout.",
+        i2c_int=(25, 21),
+        i2c_ext=(26, 32),
+        power_hold=None,
+        rgb_led=(27, 1),
+        buttons={"A": 39},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on=ATOM_CH552_FIX,
+    ),
+    dict(
+        id="AtomS3Lite",
+        name="M5AtomS3Lite",
+        board_id=137,
+        family="Atom",
+        soc="esp32s3",
+        note="The AtomS3 without the screen: an ESP32-S3 in the ATOM shell,\n"
+             "one RGB LED and the front button on GPIO 41.\n"
+             "No CH552 here - the S3 speaks USB itself, so the GPIO 0 bias the\n"
+             "classic ATOM needs does not apply.",
+        i2c_int=(38, 39),
+        i2c_ext=(2, 1),
+        power_hold=None,
+        rgb_led=(35, 1),
+        buttons={"A": 41},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on="",
+    ),
+    dict(
+        id="AtomS3U",
+        name="M5AtomS3U",
+        board_id=138,
+        family="Atom",
+        soc="esp32s3",
+        note="The AtomS3 Lite in a USB-A plug, with a microphone. Same pins\n"
+             "and the same button.",
+        i2c_int=(38, 39),
+        i2c_ext=(2, 1),
+        power_hold=None,
+        rgb_led=(35, 1),
+        buttons={"A": 41},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on="",
     ),
     dict(
         id="TimerCam",
@@ -393,23 +520,77 @@ digitalWrite(21, LOW);
                      freq_write=40000000, freq_read=16000000,
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
-        power_on="""\
-// Every one of the sixteen expander pins comes up in LED-driver mode, so
-// saying "these are GPIOs" is not optional. 1 = input for the direction,
-// 1 = plain GPIO for the mode. (M5GFX.cpp, the CoreS3 branch)
-Io.setDirections(0b00011000, 0b00001100);
-Io.setPushPullP0();
-Io.setGpioMode(0xFF, 0xFF);
-// P1_0 and P1_1 high: the second is the panel's reset line. The VBUS 5V
-// output (P1_7) is left off - see the note above.
-Io.setOutputs(0b00000101, 0b00000011);
-Io.resetPulse(TinyM5BoardIoExpanderAw9523::Io::P1_1);
-// ALDO3 feeds the camera and ALDO4 the TF slot; both want 3.3 V, and the
-// enable pattern is what this board's schematic asks for.
-Power.setLdoEnables(0xBF);
-Power.setAldo3Millivolt(3300);
-Power.setAldo4Millivolt(3300);
-""",
+        power_on=CORE_S3_POWER_ON,
+    ),
+    dict(
+        id="CoreS3SE",
+        name="M5StackCoreS3SE",
+        board_id=17,
+        family="Core",
+        soc="esp32s3",
+        note="The CoreS3 without the camera. Every register brought up here is\n"
+             "the CoreS3's, down to the camera rail: upstream tells the two\n"
+             "apart by looking for the GC0308, which is a device rather than\n"
+             "anything the bring-up depends on.\n"
+             "The same GPIO 35 note applies - MISO and the panel's D/C share\n"
+             "that pin, and re-pointing it belongs to the SPI transaction\n"
+             "layer. Its A/B/C are touch zones, not GPIOs.",
+        i2c_int=(12, 11),
+        i2c_ext=(2, 1),
+        buttons={"Pwr": "pek"},
+        pmic="axp2101",
+        io_expander="aw9523",
+        backlight=("axp2101_dldo1",),
+        display=dict(bus="spi2", mosi=37, miso=35, sclk=36, dc=35, cs=3, rst=-1,
+                     freq_write=40000000, freq_read=16000000,
+                     w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
+                     three_wire=True),
+        power_on=CORE_S3_POWER_ON,
+    ),
+    dict(
+        id="StackChan",
+        name="M5StackChan",
+        board_id=27,
+        family="Core",
+        soc="esp32s3",
+        note="The CoreS3 with the Stack-chan servo board. That board carries a\n"
+             "second expander - an M5IOE1 at 0x6F, which is how upstream tells\n"
+             "this apart from a plain CoreS3 - but it drives servos rather than\n"
+             "a rail or the panel, so bring-up is the CoreS3's and this header\n"
+             "does not touch it.\n"
+             "The same GPIO 35 note applies, and A/B/C are touch zones.",
+        i2c_int=(12, 11),
+        i2c_ext=(2, 1),
+        buttons={"Pwr": "pek"},
+        pmic="axp2101",
+        io_expander="aw9523",
+        backlight=("axp2101_dldo1",),
+        display=dict(bus="spi2", mosi=37, miso=35, sclk=36, dc=35, cs=3, rst=-1,
+                     freq_write=40000000, freq_read=16000000,
+                     w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
+                     three_wire=True),
+        power_on=CORE_S3_POWER_ON,
+    ),
+    dict(
+        id="StampPico",
+        name="M5StampPico",
+        board_id=133,
+        family="Stamp",
+        soc="esp32",
+        note="The ATOM as a solderable module: the same button on GPIO 39 and\n"
+             "the same LED on GPIO 27, but the generic I2C pins rather than\n"
+             "the ATOM's.\n"
+             "A module has no USB bridge, so the GPIO 0 bias the ATOM needs is\n"
+             "absent here - and that is upstream's reading of it too.",
+        i2c_int=(21, 22),
+        i2c_ext=(32, 33),
+        power_hold=None,
+        rgb_led=(27, 1),
+        buttons={"A": 39},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on="",
     ),
     dict(
         id="StampPLC",
