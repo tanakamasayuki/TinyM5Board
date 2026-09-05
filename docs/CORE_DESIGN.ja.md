@@ -294,6 +294,7 @@ README の表・サンプルの一覧・CI のマトリクスをこの単位で�
 static constexpr bool kHasDisplay     = true;
 static constexpr bool kHasBacklight   = true;
 static constexpr bool kHasBattery     = true;
+static constexpr bool kHasInternalI2c = true;   // 内部バスがあるか（module には無い）
 static constexpr bool kHasExternalI2c = true;   // Grove などの別バスがあるか
 static constexpr bool kSharesI2cBus   = false;  // 内部と外部が物理的に同一か
 ```

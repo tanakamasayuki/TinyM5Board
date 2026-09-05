@@ -73,10 +73,15 @@ TinyGFX の `panels/` と同じ規律（[DECISIONS.ja.md](DECISIONS.ja.md) 参�
 
 | 列 | 例 | 意味 |
 | --- | --- | --- |
-| `i2c_int` | `(21, 22)` | 内部 I2C の `(sda, scl)`。`begin()` が `Wire` を開くのに使う |
+| `i2c_int` | `(21, 22)` / `None` | 内部 I2C の `(sda, scl)`。`begin()` が `Wire` を開くのに使う。**`None` あり** —— Stamp / Nano の module には内部バスが無い |
 | `i2c_ext` | `(32, 33)` / `None` | Port A（外部 Grove）。`None` なら外部バス無し |
 | `power_hold` | `4` / `None` | POWER_HOLD |
 | `rgb_led` | `(27, 1)` / `None` | `(ピン, 個数)` |
+
+**`Wire` に載るのは「そのボードが持っている最初のバス」。**
+内部バスがあれば内部、無ければ外部（Grove）が `Wire` になる（D37）。
+両方あって別ピンで、しかも SoC の I2C が 1 つしか無い組み合わせは表現できないので、
+生成時に落とす。
 
 `buttons` はピン照会ではなく `Board.BtnA` の実体になるので別枠。
 
@@ -188,6 +193,7 @@ IMU については、そもそも**チップ種別が確定しない**（D6）�
 | 持たないもの | どこから出るか |
 | --- | --- |
 | FPU の有無 / `Wire1` の有無 / I2C の数 | **`soc` から** |
+| `kHasInternalI2c` | `i2c_int` が `None` か |
 | `kHasExternalI2c` | `i2c_ext` が `None` か |
 | `kSharesI2cBus` | `i2c_int == i2c_ext` か |
 | `kHasDisplay` / `kHasBattery` / `kHasBacklight` | 対応する列が `None` か |

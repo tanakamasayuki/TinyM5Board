@@ -1,0 +1,7 @@
+--- begin() ---
+i2c0 begin sda=2 scl=1 hz=100000
+pinMode(9, INPUT_PULLUP)
+--- board ---
+name=M5NanoC6 id=140
+pins i2c=-1/-1 ext=2/1 led=20/1 hold=-1
+has display=0 backlight=0 battery=0 intI2c=0 extI2c=1 shared=0

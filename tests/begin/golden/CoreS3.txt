@@ -36,7 +36,7 @@ i2c0 write 0x34 [99 18]
 --- board ---
 name=M5StackCoreS3 id=10
 pins i2c=12/11 ext=2/1 led=-1/0 hold=-1
-has display=1 backlight=1 battery=1 extI2c=1 shared=0
+has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=0
 --- display ---
 spi mosi=37 miso=35 sclk=36 dc=35 cs=3 rst=-1 3wire=1
 freq write=40000000 read=16000000

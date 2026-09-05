@@ -49,6 +49,10 @@
 #include "TinyM5BoardTimerCam.h"
 #elif defined(TINYM5_CAPSULE)
 #include "TinyM5BoardCapsule.h"
+#elif defined(TINYM5_NANOC6)
+#include "TinyM5BoardNanoC6.h"
+#elif defined(TINYM5_NANOH2)
+#include "TinyM5BoardNanoH2.h"
 #elif defined(TINYM5_STICKCPLUS2)
 #include "TinyM5BoardStickCPlus2.h"
 #elif defined(TINYM5_STICKC)
@@ -73,6 +77,12 @@
 #include "TinyM5BoardStackChan.h"
 #elif defined(TINYM5_STAMPPICO)
 #include "TinyM5BoardStampPico.h"
+#elif defined(TINYM5_STAMPS3)
+#include "TinyM5BoardStampS3.h"
+#elif defined(TINYM5_STAMPC3)
+#include "TinyM5BoardStampC3.h"
+#elif defined(TINYM5_STAMPC3U)
+#include "TinyM5BoardStampC3U.h"
 #elif defined(TINYM5_STAMPPLC)
 #include "TinyM5BoardStampPLC.h"
 #else

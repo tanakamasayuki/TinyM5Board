@@ -5,4 +5,4 @@ pinMode(41, INPUT_PULLUP)
 --- board ---
 name=M5AtomS3Lite id=137
 pins i2c=38/39 ext=2/1 led=35/1 hold=-1
-has display=0 backlight=0 battery=0 extI2c=1 shared=0
+has display=0 backlight=0 battery=0 intI2c=1 extI2c=1 shared=0

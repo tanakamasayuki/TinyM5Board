@@ -1,0 +1,7 @@
+--- begin() ---
+i2c0 begin sda=1 scl=0 hz=100000
+pinMode(9, INPUT_PULLUP)
+--- board ---
+name=M5StampC3U id=135
+pins i2c=-1/-1 ext=1/0 led=2/1 hold=-1
+has display=0 backlight=0 battery=0 intI2c=0 extI2c=1 shared=0

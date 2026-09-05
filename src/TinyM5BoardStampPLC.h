@@ -47,6 +47,7 @@ class TinyM5BoardStampPLC {
   static constexpr bool kHasDisplay = true;
   static constexpr bool kHasBacklight = true;
   static constexpr bool kHasBattery = false;
+  static constexpr bool kHasInternalI2c = true;
   static constexpr bool kHasExternalI2c = true;
   static constexpr bool kSharesI2cBus = false;
 
@@ -153,6 +154,7 @@ class TinyM5BoardStampPLC {
 #define TINYM5_HAS_DISPLAY 1
 #define TINYM5_HAS_BACKLIGHT 1
 #define TINYM5_HAS_BATTERY 0
+#define TINYM5_HAS_INTERNAL_I2C 1
 #define TINYM5_HAS_EXTERNAL_I2C 1
 #define TINYM5_HAS_RGB_LED 1
 #define TINYM5_HAS_BTN_A 1

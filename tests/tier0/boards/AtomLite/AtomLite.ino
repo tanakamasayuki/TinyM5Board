@@ -22,6 +22,7 @@ TINYM5_BOARD Board;
 #if !defined(TINYM5_HAS_DISPLAY) \
     || !defined(TINYM5_HAS_BACKLIGHT) \
     || !defined(TINYM5_HAS_BATTERY) \
+    || !defined(TINYM5_HAS_INTERNAL_I2C) \
     || !defined(TINYM5_HAS_EXTERNAL_I2C) \
     || !defined(TINYM5_HAS_RGB_LED) \
     || !defined(TINYM5_HAS_BTN_A) \
@@ -41,6 +42,7 @@ static_assert(TINYM5_BOARD::kFamily == TinyM5::Family::Atom,
 static_assert(TINYM5_HAS_DISPLAY == TINYM5_BOARD::kHasDisplay, "display");
 static_assert(TINYM5_HAS_BACKLIGHT == TINYM5_BOARD::kHasBacklight, "backlight");
 static_assert(TINYM5_HAS_BATTERY == TINYM5_BOARD::kHasBattery, "battery");
+static_assert(TINYM5_HAS_INTERNAL_I2C == TINYM5_BOARD::kHasInternalI2c, "internal I2C");
 static_assert(TINYM5_HAS_EXTERNAL_I2C == TINYM5_BOARD::kHasExternalI2c, "external I2C");
 static_assert(TINYM5_HAS_RGB_LED == (TINYM5_BOARD::kRgbLed >= 0), "RGB LED");
 

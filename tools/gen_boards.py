@@ -23,6 +23,8 @@ So: **top of `src/` is the entry, `src/TinyM5Board/` is the inside.**
 Only what a schematic tells you and a datasheet does not. Everything
 derivable is derived here rather than typed in:
 
+    kHasInternalI2c   whether i2c_int is set - a Stamp or a Nano has
+                      only the Grove port, and that one goes on `Wire`
     kHasExternalI2c   whether i2c_ext is set
     kSharesI2cBus     whether the two I2C pin pairs are the same
     kHasDisplay/...   whether the matching column is set
@@ -276,6 +278,45 @@ digitalWrite(2, LOW);
         buttons={"A": 42, "B": 0},
         pmic="adc",
         bat_adc=(6, 2000),
+        backlight=None,
+        display=None,
+        power_on="",
+    ),
+    dict(
+        id="NanoC6",
+        name="M5NanoC6",
+        board_id=140,
+        family="Other",
+        soc="esp32c6",
+        note="An ESP32-C6 with a USB-A plug. Only the Grove port, so that is\n"
+             "what Wire opens.\n"
+             "The blue status LED on GPIO 7 is a device rather than a rail -\n"
+             "M5Unified drives it through setLed() - so bring-up leaves it\n"
+             "alone. The RGB LED here is the one on GPIO 20.",
+        i2c_int=None,
+        i2c_ext=(2, 1),
+        power_hold=None,
+        rgb_led=(20, 1),
+        buttons={"A": 9},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on="",
+    ),
+    dict(
+        id="NanoH2",
+        name="M5NanoH2",
+        board_id=151,
+        family="Other",
+        soc="esp32h2",
+        note="The NanoC6's ESP32-H2 twin: same shape, same button, and the\n"
+             "RGB LED on GPIO 11 instead of 20.",
+        i2c_int=None,
+        i2c_ext=(2, 1),
+        power_hold=None,
+        rgb_led=(11, 1),
+        buttons={"A": 9},
+        pmic=None,
         backlight=None,
         display=None,
         power_on="",
@@ -593,6 +634,65 @@ digitalWrite(21, LOW);
         power_on="",
     ),
     dict(
+        id="StampS3",
+        name="M5StampS3",
+        board_id=136,
+        family="Stamp",
+        soc="esp32s3",
+        note="A solderable ESP32-S3 module. It has no internal I2C bus at\n"
+             "all - the Grove port is the only one, so that is the bus Wire\n"
+             "opens and kI2cSda reads -1.\n"
+             "The button is the boot pin, GPIO 0.",
+        i2c_int=None,
+        i2c_ext=(13, 15),
+        power_hold=None,
+        rgb_led=(21, 1),
+        buttons={"A": 0},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on="",
+    ),
+    dict(
+        id="StampC3",
+        name="M5StampC3",
+        board_id=134,
+        family="Stamp",
+        soc="esp32c3",
+        note="The RISC-V module. Like the StampS3 it has only the Grove port,\n"
+             "and its one I2C controller is what that port gets.\n"
+             "Upstream tells this from the C3U by a strong external pull-up on\n"
+             "GPIO 20 - not something a build-time choice needs, but it is why\n"
+             "these are two entries rather than one.",
+        i2c_int=None,
+        i2c_ext=(1, 0),
+        power_hold=None,
+        rgb_led=(2, 1),
+        buttons={"A": 3},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on="",
+    ),
+    dict(
+        id="StampC3U",
+        name="M5StampC3U",
+        board_id=135,
+        family="Stamp",
+        soc="esp32c3",
+        note="The StampC3 with a USB-A plug. Same bus and the same LED; the\n"
+             "button moves from GPIO 3 to GPIO 9.",
+        i2c_int=None,
+        i2c_ext=(1, 0),
+        power_hold=None,
+        rgb_led=(2, 1),
+        buttons={"A": 9},
+        pmic=None,
+        backlight=None,
+        display=None,
+        power_on="",
+    ),
+    dict(
         id="StampPLC",
         name="M5StampPLC",
         board_id=21,
@@ -631,7 +731,7 @@ Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P2);
 
 # Columns a board may leave out. Omitting one says "this board has no such
 # hardware", which is also what the kHas* flags are derived from.
-OPTIONAL = dict(note="", i2c_ext=None, power_hold=None, rgb_led=None,
+OPTIONAL = dict(note="", i2c_int=None, i2c_ext=None, power_hold=None, rgb_led=None,
                 buttons={}, pmic=None, bat_adc=None, rails=(), rail_mv={},
                 io_expander=None, backlight=None, display=None, power_on="")
 
@@ -658,14 +758,27 @@ def derive(b):
     soc = SOC[b["soc"]]
     d = dict(OPTIONAL)
     d.update(b)
+    d["has_int_i2c"] = d["i2c_int"] is not None
     d["has_ext_i2c"] = d["i2c_ext"] is not None
-    d["shares_i2c"] = d["i2c_ext"] is not None and d["i2c_ext"] == d["i2c_int"]
+    d["shares_i2c"] = (d["has_int_i2c"] and d["has_ext_i2c"]
+                       and d["i2c_ext"] == d["i2c_int"])
     d["has_display"] = d["display"] is not None
     d["has_backlight"] = d["backlight"] is not None
     d["has_battery"] = d["pmic"] is not None
     # Wire1 only exists where the SoC has a second I2C controller, and
     # only matters when the external bus is a different one.
-    d["use_wire1"] = d["has_ext_i2c"] and not d["shares_i2c"] and soc["i2c_num"] > 1
+    d["use_wire1"] = (d["has_int_i2c"] and d["has_ext_i2c"]
+                      and not d["shares_i2c"] and soc["i2c_num"] > 1)
+    if (d["has_int_i2c"] and d["has_ext_i2c"] and not d["shares_i2c"]
+            and soc["i2c_num"] < 2):
+        raise SystemExit(f"{d['id']}: two separate I2C buses on a {d['soc']}, "
+                         "which has one controller - the catalogue cannot say "
+                         "which one begin() should open")
+    # The Stamp and Nano modules have no internal bus at all: the Grove
+    # port is the only one, so it is the one `Wire` opens. A sketch that
+    # says Wire.begin() itself would otherwise be reaching for a bus this
+    # board does not have.
+    d["wire0"] = d["i2c_int"] if d["has_int_i2c"] else d["i2c_ext"]
     d["classic"] = soc["classic"]
     return d
 
@@ -743,8 +856,14 @@ def emit_board(entry):
     a(f'  static constexpr const char *kName = "{b["name"]}";\n\n')
 
     a("  // ---- pins ----\n")
-    a(f"  static constexpr int8_t kI2cSda = {b['i2c_int'][0]};\n")
-    a(f"  static constexpr int8_t kI2cScl = {b['i2c_int'][1]};\n")
+    if d["has_int_i2c"]:
+        a(f"  static constexpr int8_t kI2cSda = {d['i2c_int'][0]};\n")
+        a(f"  static constexpr int8_t kI2cScl = {d['i2c_int'][1]};\n")
+    else:
+        # No internal bus. The Grove port below is the only one, and it is
+        # what begin() opens on Wire.
+        a("  static constexpr int8_t kI2cSda = -1;\n")
+        a("  static constexpr int8_t kI2cScl = -1;\n")
     if d["has_ext_i2c"]:
         a(f"  static constexpr int8_t kI2cExtSda = {b['i2c_ext'][0]};\n")
         a(f"  static constexpr int8_t kI2cExtScl = {b['i2c_ext'][1]};\n")
@@ -772,6 +891,7 @@ def emit_board(entry):
     for flag, val in (("kHasDisplay", d["has_display"]),
                       ("kHasBacklight", d["has_backlight"]),
                       ("kHasBattery", d["has_battery"]),
+                      ("kHasInternalI2c", d["has_int_i2c"]),
                       ("kHasExternalI2c", d["has_ext_i2c"]),
                       ("kSharesI2cBus", d["shares_i2c"])):
         a(f"  static constexpr bool {flag} = {'true' if val else 'false'};\n")
@@ -869,11 +989,13 @@ def emit_board(entry):
     if b["power_hold"] is not None:
         a("    holdPower();\n")
     a("    if (!(flags & TinyM5::KeepSerial)) {\n      Serial.begin(115200);\n    }\n")
-    a("    if (!(flags & TinyM5::KeepI2c)) {\n")
-    a("      Wire.begin(kI2cSda, kI2cScl);\n")
-    if d["use_wire1"]:
-        a("      Wire1.begin(kI2cExtSda, kI2cExtScl);\n")
-    a("    }\n")
+    if d["wire0"]:
+        first = "kI2cSda, kI2cScl" if d["has_int_i2c"] else "kI2cExtSda, kI2cExtScl"
+        a("    if (!(flags & TinyM5::KeepI2c)) {\n")
+        a(f"      Wire.begin({first});\n")
+        if d["use_wire1"]:
+            a("      Wire1.begin(kI2cExtSda, kI2cExtScl);\n")
+        a("    }\n")
     for name, spec in b["buttons"].items():
         if spec == "pek" or (isinstance(spec, tuple) and spec[0] == "io"):
             continue
@@ -968,6 +1090,7 @@ def emit_board(entry):
     for macro, val in (("TINYM5_HAS_DISPLAY", d["has_display"]),
                        ("TINYM5_HAS_BACKLIGHT", d["has_backlight"]),
                        ("TINYM5_HAS_BATTERY", d["has_battery"]),
+                       ("TINYM5_HAS_INTERNAL_I2C", d["has_int_i2c"]),
                        ("TINYM5_HAS_EXTERNAL_I2C", d["has_ext_i2c"]),
                        ("TINYM5_HAS_RGB_LED", bool(d["rgb_led"]))):
         a(f"#define {macro} {1 if val else 0}\n")
@@ -1078,8 +1201,9 @@ default_profile: {soc}
 # is the one mistake deriving them cannot rule out, because a sketch
 # reads the macro and the code beside it reads the constant.
 TIER0_MACROS = ("TINYM5_HAS_DISPLAY", "TINYM5_HAS_BACKLIGHT", "TINYM5_HAS_BATTERY",
-                "TINYM5_HAS_EXTERNAL_I2C", "TINYM5_HAS_RGB_LED", "TINYM5_HAS_BTN_A",
-                "TINYM5_HAS_BTN_B", "TINYM5_HAS_BTN_C", "TINYM5_HAS_BTN_PWR")
+                "TINYM5_HAS_INTERNAL_I2C", "TINYM5_HAS_EXTERNAL_I2C",
+                "TINYM5_HAS_RGB_LED", "TINYM5_HAS_BTN_A", "TINYM5_HAS_BTN_B",
+                "TINYM5_HAS_BTN_C", "TINYM5_HAS_BTN_PWR")
 
 
 def emit_tier0(b):
@@ -1120,6 +1244,7 @@ static_assert(TINYM5_BOARD::kFamily == TinyM5::Family::{b["family"]},
 static_assert(TINYM5_HAS_DISPLAY == TINYM5_BOARD::kHasDisplay, "display");
 static_assert(TINYM5_HAS_BACKLIGHT == TINYM5_BOARD::kHasBacklight, "backlight");
 static_assert(TINYM5_HAS_BATTERY == TINYM5_BOARD::kHasBattery, "battery");
+static_assert(TINYM5_HAS_INTERNAL_I2C == TINYM5_BOARD::kHasInternalI2c, "internal I2C");
 static_assert(TINYM5_HAS_EXTERNAL_I2C == TINYM5_BOARD::kHasExternalI2c, "external I2C");
 static_assert(TINYM5_HAS_RGB_LED == (TINYM5_BOARD::kRgbLed >= 0), "RGB LED");
 

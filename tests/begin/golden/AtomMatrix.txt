@@ -7,4 +7,4 @@ digitalWrite(0, 1)
 --- board ---
 name=M5AtomMatrix id=141
 pins i2c=25/21 ext=26/32 led=27/25 hold=-1
-has display=0 backlight=0 battery=0 extI2c=1 shared=0
+has display=0 backlight=0 battery=0 intI2c=1 extI2c=1 shared=0

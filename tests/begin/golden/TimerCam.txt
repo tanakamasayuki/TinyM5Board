@@ -8,6 +8,6 @@ digitalWrite(2, 0)
 --- board ---
 name=M5TimerCam id=132
 pins i2c=12/14 ext=4/13 led=-1/0 hold=33
-has display=0 backlight=0 battery=1 extI2c=1 shared=0
+has display=0 backlight=0 battery=1 intI2c=1 extI2c=1 shared=0
 --- battery ---
 mV=3026 level=0

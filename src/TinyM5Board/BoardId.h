@@ -26,11 +26,16 @@ enum class BoardId : uint16_t {
   AtomU = 130,
   TimerCam = 132,
   StampPico = 133,
+  StampC3 = 134,
+  StampC3U = 135,
+  StampS3 = 136,
   AtomS3Lite = 137,
   AtomS3U = 138,
   Capsule = 139,
+  NanoC6 = 140,
   AtomMatrix = 141,
   AtomVoice = 142,
+  NanoH2 = 151,
 };
 
 }  // namespace TinyM5

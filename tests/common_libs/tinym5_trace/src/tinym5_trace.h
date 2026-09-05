@@ -196,10 +196,10 @@ inline void finish()
   line("pins i2c=%d/%d ext=%d/%d led=%d/%u hold=%d", TINYM5_BOARD::kI2cSda,
        TINYM5_BOARD::kI2cScl, TINYM5_BOARD::kI2cExtSda, TINYM5_BOARD::kI2cExtScl,
        TINYM5_BOARD::kRgbLed, TINYM5_BOARD::kRgbLedCount, TINYM5_BOARD::kPowerHold);
-  line("has display=%d backlight=%d battery=%d extI2c=%d shared=%d",
+  line("has display=%d backlight=%d battery=%d intI2c=%d extI2c=%d shared=%d",
        TINYM5_BOARD::kHasDisplay, TINYM5_BOARD::kHasBacklight,
-       TINYM5_BOARD::kHasBattery, TINYM5_BOARD::kHasExternalI2c,
-       TINYM5_BOARD::kSharesI2cBus);
+       TINYM5_BOARD::kHasBattery, TINYM5_BOARD::kHasInternalI2c,
+       TINYM5_BOARD::kHasExternalI2c, TINYM5_BOARD::kSharesI2cBus);
 #if TINYM5_HAS_DISPLAY
   {
     const auto d = TINYM5_BOARD::display();

@@ -4,23 +4,25 @@
 
 ## 1. 現在地
 
-**21 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
-実物のツールチェーンのビルド（Tier 0）まで通っている。**
+**26 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
+実物のツールチェーンのビルド（Tier 0）まで通っている。SoC は esp32 / S3 /
+C3 / C6 / H2 の 5 種類。**
 
 | 項目 | 状況 |
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **21 機種** —— Atom: AtomLite / **AtomMatrix** / **AtomU** / **AtomVoice** / **AtomS3Lite** / **AtomS3U**、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / **CoreS3SE** / **StackChan**、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: **StampPico** / StampPLC、Other: TimerCam / Capsule |
+| ボード定義 | **26 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / **NanoC6** / **NanoH2** |
 | 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
 | IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / **`IoExpanderPi4io`**。**主要 3 種が揃った** |
 | バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / **AXP2101 (Bldo1・Dldo1)** / Core2 / M5IOE1 の PWM。**すべて M5GFX と同じカーブ** |
 | ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。**click / hold / click カウントまで M5Unified と同じ状態機械**（D36） |
 | 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセットの表現あり |
-| `tests/begin/` | **22 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
-| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（21 機種 + 入口 2 本 / 約 2 分半） |
+| `tests/begin/` | **27 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
+| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（26 機種 + 入口 2 本 / 5 種類の SoC） |
 | `tests/unit/` | **ボード非依存のクラス**の検査。いまは Button の状態機械 1 本（39 検査 / 約 7 秒） |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` は別ジョブ |
+| I2C | 内部 / 外部の 2 本。**内部を持たない module では Grove が `Wire`**（D37） |
 | `keywords.txt` | **あり。** `gen_boards.py` が**ヘッダを読み直して**生成する |
 | 利用者向け README | **無い。** 機種が揃ってから |
 
@@ -65,10 +67,11 @@
 ### 1.3 テストの所要時間
 
 `tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
-22 スケッチで約 3 分（ローカル実測）。**群ごとに並列化してある**ので CI では最長の群の時間で済み、
-ローカルは `pytest begin/Stick` のように絞れる（約 2 分）。
+27 スケッチで約 3 分半（ローカル実測）。**群ごとに並列化してある**ので CI では最長の群の時間で済み、
+ローカルは `pytest begin/Stick` のように絞れる（4 機種で約 30 秒）。
 
-`tests/tier0` は 23 本ビルドして**約 2 分半**、`tests/unit` は 1 本で**約 7 秒**。
+`tests/tier0` は 28 本ビルドして**約 2 分半**、`tests/unit` は 1 本で**約 7 秒**。
+**全部で 6 分 25 秒**（26 機種 / ローカル実測）。
 どちらも機種数に線形だが、実行が無い分だけ安い。
 ボード非依存の変更は `unit` だけ回せばよい。
 
@@ -178,10 +181,11 @@ Core2 の PMIC 判別のような分岐も両方通せる。
    （違いはカメラと servo 側のエキスパンダで、電源にも表示にも関わらない）
 9. ~~PI4IOE5V6408~~ —— 通した。**NessoN1 はエキスパンダ 2 個で同じ形**
 10. 画面なしボード —— **AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U /
-    StampPico を通した。** どれもピン表と識別子だけで、`power_on` を書いたものは無い
+    StampPico / StampS3 / StampC3 / StampC3U / NanoC6 / NanoH2 を通した。**
+    どれもピン表と識別子だけで、`power_on` を書いたものは無い
     （CH552 の GPIO0 バイアスは AtomLite と共有する定数にした）。
-    残りは StampS3 系のように**内部 I2C を持たない**形が出てくるので、
-    そこは `i2c_int` を省略可にする話になる
+    **内部 I2C を持たない形は `i2c_int` を省略可にして通した**（D37）。
+    C3 / C6 / H2 が入ったので、Tier 0 が RISC-V のツールチェーンも通るようになった
 
 **電源と IO の側は主要なチップが出揃った。**
 AXP192 / AXP2101 / M5PM1 / ADC と、M5IOE1 / AW9523B / PI4IO。
