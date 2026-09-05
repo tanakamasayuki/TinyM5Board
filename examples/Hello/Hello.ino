@@ -57,6 +57,13 @@ void loop()
   if (Board.BtnA.wasHold()) {
     Serial.println("BtnA held");
   }
+  // A click is a press that was let go of before it became a hold, so
+  // this fires on the release rather than on the way down. How many
+  // clicks there were cannot be known until the button has been quiet
+  // for a moment, which is why the count arrives separately.
+  if (Board.BtnA.wasDoubleClicked()) {
+    Serial.println("BtnA double click");
+  }
 #endif
 #if TINYM5_HAS_BTN_PWR
   if (Board.BtnPwr.wasPressed()) {

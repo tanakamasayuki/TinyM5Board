@@ -31,6 +31,58 @@ jobs:
       - id: list
         run: echo "families=$(python3 tools/gen_boards.py --families)" >> "$GITHUB_OUTPUT"
 
+  # The classes that are not per board - the button state machine so far.
+  # Deliberately not behind the catalogue gate: nothing here is
+  # generated, and one fast job that always reports is worth having when
+  # the matrix below takes minutes.
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install test dependencies
+        working-directory: tests
+        run: uv sync
+
+      - name: Run unit tests
+        working-directory: tests
+        run: uv run pytest unit -v -s --profile host
+
+  # Tier 0: every board header, compiled by the toolchain that ships the
+  # code. The begin() goldens run on the host core, so this is the only
+  # job that sees the real compiler - and the only one that pays for the
+  # esp32 core, which the profile downloads rather than `core install`
+  # (D29). About a minute and a half of compiling on top of that.
+  tier0:
+    needs: catalogue
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install test dependencies
+        working-directory: tests
+        run: uv sync
+
+      - name: Compile every board header
+        working-directory: tests
+        run: uv run pytest tier0 -v
+
   # One job per board family. Each begin() test builds and runs its own
   # sketch, so the wall clock grows with the catalogue; splitting on the
   # family keeps it flat and makes a failure read as "Stick broke"

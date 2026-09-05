@@ -14,10 +14,13 @@
 | 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
 | IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / **`IoExpanderPi4io`**。**主要 3 種が揃った** |
 | バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / **AXP2101 (Bldo1・Dldo1)** / Core2 / M5IOE1 の PWM。**すべて M5GFX と同じカーブ** |
-| ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。click カウントは未実装 |
+| ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。**click / hold / click カウントまで M5Unified と同じ状態機械**（D36） |
 | 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセットの表現あり |
 | `tests/begin/` | **13 スケッチ通過。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
-| `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成 |
+| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（約 90 秒） |
+| `tests/unit/` | **ボード非依存のクラス**の検査。いまは Button の状態機械 1 本（39 検査 / 約 7 秒） |
+| `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` は別ジョブ |
+| `keywords.txt` | **あり。** `gen_boards.py` が**ヘッダを読み直して**生成する |
 | 利用者向け README | **無い。** 機種が揃ってから |
 
 ### 1.1 実測（arduino-esp32 3.3.11 / 同一スケッチ）
@@ -53,11 +56,20 @@
 **`bit()` は Arduino のマクロ。** 同名のメンバ関数を書くとプリプロセッサに
 書き換えられ、エラーがコアのヘッダの行番号で出る。
 
+**間引いた `update()` は「変化なし」を返さないといけない。** I2C 越しのボタンは
+デバウンス間隔に 1 回しか読まないが、読まなかった回で前回のエッジを立てたままに
+すると、**1 回の押しが `wasPressed()` で何回も取れる。** 押した回数を数える
+サンプルは、これで必ず狂う。読み飛ばす経路にも状態を畳む処理が要る。
+
 ### 1.3 テストの所要時間
 
 `tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
 14 スケッチで約 10 分。**群ごとに並列化してある**ので CI では最長の群の時間で済み、
 ローカルは `pytest begin/Stick` のように絞れる（約 2 分）。
+
+`tests/tier0` は 15 本ビルドして**約 90 秒**、`tests/unit` は 1 本で**約 7 秒**。
+どちらも機種数に線形だが、実行が無い分だけ安い。
+ボード非依存の変更は `unit` だけ回せばよい。
 
 **Core 群が既に 5 スケッチ**で最長になっている。群がさらに偏るようなら、
 matrix の軸を群からボード単位に落とす（生成できるので workflow は変わらない）。
@@ -74,11 +86,13 @@ host-arduino-core 1.5.0 のバス観測ポート（GPIO / I2C / SPI の 3 つ）
 `Board.begin()` が触るものは全部見える。`setReadHook` で応答を差し込めるので、
 Core2 の PMIC 判別のような分岐も両方通せる。
 
-作るもの:
+作るもの —— **すべて済**:
 
-- `tests/` の骨格（pytest + uv、`.github/workflows/tests.yml`）
-- Tier 0（全機種のヘッダ単体コンパイル）
-- 観測ポートのログを 1 本にまとめるヘルパと、ゴールデンの比較・更新
+- ~~`tests/` の骨格（pytest + uv、`.github/workflows/tests.yml`）~~
+- ~~Tier 0（全機種のヘッダ単体コンパイル）~~ —— `tests/tier0/`。
+  **実物のツールチェーンが通る唯一の層**で、マクロと定数の一致まで
+  `static_assert` で見る（TEST_PLAN §2）
+- ~~観測ポートのログを 1 本にまとめるヘルパと、ゴールデンの比較・更新~~
 
 **ボードを 1 機種も書く前にここを作る。** 逆順にすると、増やした分だけ壊れる。
 
@@ -166,7 +180,6 @@ AXP192 / AXP2101 / M5PM1 / ADC と、M5IOE1 / AW9523B / PI4IO。
 | | |
 | --- | --- |
 | **SD の SPI モード落とし** | Core2 / Tough / M5Stack / CoreS3 / StampPLC / PaperColor / Paper は SD が LCD と同じ SPI バスに載る。SD モードのままだとバス上で応答してパネル ID 読みを壊す。**責務としては持つと決めている**（REQUIREMENTS §4.2）が未実装 |
-| Button の click カウント | `wasClicked` / `wasDoubleClicked` / `getClickCount` が未実装 |
 | **SPI 以外の表示バス** | `TinyM5::Display` は SPI 前提。StopWatch (AMOLED QSPI) / PaperMono (EPD) / CoreP4X (MIPI-DSI) / CoreMatrix (LED マトリクスの I2C) はこの構造体に入らない。**電源側はもう届いている**ので、次に大きい設計判断はここ |
 | CoreS3 の GPIO35 兼用 | MISO と D/C を共有しており、CS のたびに GPIO マトリクスの書き換えが要る。**SPI トランザクション層の話なので GFX の領分**。諸元では両方の役割を報告し、注記している |
 
@@ -193,11 +206,11 @@ AXP192 / AXP2101 / M5PM1 / ADC と、M5IOE1 / AW9523B / PI4IO。
 | `.gitignore` | **あり** | TinyGFX からコピー |
 | `tools/bump_version.py` | **あり** | toolkit からコピー。**個別編集しない** |
 | `.github/workflows/release.yml` | **あり** | toolkit からコピー。**個別編集しない** |
-| `keywords.txt` | **無い** | `gen_boards.py` が生成する |
-| `.github/workflows/tests.yml` | **無い** | プロジェクト固有。2-1 の後 |
-| `src/` 一式 | **無い** | |
-| `examples/` | **無い** | |
-| `tests/` 一式 | **無い** | |
+| `keywords.txt` | **あり** | `gen_boards.py` が生成。**ヘッダを読み直す**ので手で並べる箇所が無い |
+| `.github/workflows/tests.yml` | **あり** | `catalogue` → 群ごとの `begin` matrix、それと `unit` |
+| `src/` 一式 | **あり** | ボードヘッダは生成物 |
+| `examples/` | **あり** | `Hello` のみ。機種が揃ってから増やす |
+| `tests/` 一式 | **あり** | `tier0/` `begin/`（生成）と `unit/`（手書き） |
 | `README.md` / `README.ja.md` | **無い** | 実機で動いてから書く |
 
 ## 4. リリース方針

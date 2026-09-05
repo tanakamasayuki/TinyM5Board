@@ -5,7 +5,10 @@
 ```sh
 cd tests
 uv sync
-uv run pytest begin --profile host
+uv run pytest --profile host          # everything
+uv run pytest unit --profile host     # the board independent classes, ~7s
+uv run pytest tier0                   # every header, real toolchain, ~90s
+uv run pytest begin --profile host    # the bring-up goldens, ~5-8 min
 ```
 
 Cores are never installed with `arduino-cli core install`. Each test's
@@ -19,11 +22,57 @@ axis and what you select on locally:
 
 ```sh
 uv run pytest begin/Stick --profile host    # 3 boards, about 2 minutes
-uv run pytest begin --profile host          # everything, 5-8 minutes
+uv run pytest begin --profile host          # every board, 5-8 minutes
 ```
 
 Each one builds and runs its own sketch, so the wall clock grows with the
 catalogue. Day to day, run the family you touched.
+
+## `tier0/` — every header, through the real toolchain
+
+Nothing runs here. `arduino-cli compile` returning zero is the whole
+result, and the sketches carry their own expectations as `static_assert`
+and `#error`, so a wrong answer is a compile error rather than something
+the test file has to check.
+
+It is the only tier built by the compiler that ships the code, and it
+builds each board for the SoC that board actually has. The goldens run on
+the host core, which is a different compiler with different headers.
+
+What it pins down: the header compiles alone; the `#define TINYM5_<ID>`
+and `TINYM5_BOARD_HEADER` ways in reach the same board; two board headers
+in one sketch stop the build; `TINYM5_NO_GLOBAL_BOARD` really suppresses
+the global; every feature macro exists on every board and agrees with the
+constant beside it; `getPin()` agrees with the constants.
+
+The target is the generic dev module for each SoC rather than the board's
+own FQBN. The variant only sets pin aliases and a flash layout and this
+library reads neither, so trusting the IDE's board choice here would
+contradict the reason it is not trusted at build time.
+
+```sh
+uv run pytest tier0                  # about 90 seconds, no --profile needed
+uv run pytest tier0 -k StickC        # one board
+```
+
+The first run downloads the esp32 core that every `sketch.yaml` pins.
+
+## `unit/` — the classes that are not per board
+
+A golden only covers `begin()`. The buttons do their work in `update()`,
+which puts nothing on any bus, and they are one class shared by every
+board rather than something a per-board golden could hold. So they are
+checked on their own.
+
+The clock is an argument (`update(msec)`), so a 600 ms hold costs no wall
+clock and the result cannot depend on how fast the machine is. Every
+expectation is written next to the stimulus that produces it, and the
+sketch reports them to `output/checks.txt`; a `FAIL` line there becomes
+the assertion message.
+
+Hand written, not generated - there is no board in it - and it builds and
+runs in about seven seconds, so it is the one to run while working on
+anything under `src/TinyM5Board/`.
 
 ## `begin/` — the bring-up golden
 
@@ -35,8 +84,8 @@ through `<HostBus.h>`, I2C through the `TwoWire` hooks — so **there is no
 instrumentation inside the library**. What runs is what a sketch would
 compile.
 
-The board arrives as `-DTINYM5_BOARD_HEADER="..."`, so one sketch covers
-the whole catalogue. That is what the build-flag entry point is for.
+Each board gets its own generated sketch, including its header the way
+the README recommends - so the test walks the path a user does.
 
 ### Goldens are frozen
 
