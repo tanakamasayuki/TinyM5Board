@@ -20,9 +20,10 @@ C3 / C6 / H2 の 5 種類。**
 | 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセットの表現あり |
 | `tests/begin/` | **27 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
 | `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（26 機種 + 入口 2 本 / 5 種類の SoC） |
-| `tests/unit/` | **ボード非依存のクラス**の検査。いまは Button の状態機械 1 本（39 検査 / 約 7 秒） |
+| `tests/unit/` | **ボード非依存のクラス**の検査。Button の状態機械と SD のモード落とし（39 + 13 検査 / 約 16 秒） |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` は別ジョブ |
 | I2C | 内部 / 外部の 2 本。**内部を持たない module では Grove が `Wire`**（D37） |
+| SD | **パネルとバスを共有する 6 機種でモードを落とす**（D38）。バスは `SPI.end()` で返す |
 | `keywords.txt` | **あり。** `gen_boards.py` が**ヘッダを読み直して**生成する |
 | 利用者向け README | **無い。** 機種が揃ってから |
 
@@ -38,6 +39,9 @@ C3 / C6 / H2 の 5 種類。**
 | ChainCaptain（M5PM1 + M5IOE1 / ESP32-S3） | 322,017 B |
 | CoreS3（AXP2101 + AW9523B / ESP32-S3） | 320,265 B |
 | StampPLC（PI4IO のみ / ESP32-S3） | 321,329 B |
+
+**SD のモード落とし（D38）は +5,324 B。** 中身ではなく Arduino の `SPI` を
+引くぶんで、該当するのは 6 機種のみ。
 
 **二択のまま持つ代金は 480〜776 バイト。**
 
@@ -70,8 +74,8 @@ C3 / C6 / H2 の 5 種類。**
 27 スケッチで約 3 分半（ローカル実測）。**群ごとに並列化してある**ので CI では最長の群の時間で済み、
 ローカルは `pytest begin/Stick` のように絞れる（4 機種で約 30 秒）。
 
-`tests/tier0` は 28 本ビルドして**約 2 分半**、`tests/unit` は 1 本で**約 7 秒**。
-**全部で 6 分 25 秒**（26 機種 / ローカル実測）。
+`tests/tier0` は 28 本ビルドして**約 2 分半**、`tests/unit` は 2 本で**約 16 秒**。
+**全部で 7 分 6 秒**（26 機種 / ローカル実測）。
 どちらも機種数に線形だが、実行が無い分だけ安い。
 ボード非依存の変更は `unit` だけ回せばよい。
 
@@ -194,9 +198,12 @@ AXP192 / AXP2101 / M5PM1 / ADC と、M5IOE1 / AW9523B / PI4IO。
 
 ### 2-7. 積んである宿題
 
+**SD のモード落としは済**（D38）。カタログにいる 6 機種
+（Core2 / Tough / CoreS3 / CoreS3SE / StackChan / StampPLC）で通っている。
+まだ入っていない M5Stack 初代 / PaperColor / Paper は、機種を足せば列を書くだけ。
+
 | | |
 | --- | --- |
-| **SD の SPI モード落とし** | Core2 / Tough / M5Stack / CoreS3 / StampPLC / PaperColor / Paper は SD が LCD と同じ SPI バスに載る。SD モードのままだとバス上で応答してパネル ID 読みを壊す。**責務としては持つと決めている**（REQUIREMENTS §4.2）が未実装 |
 | **SPI 以外の表示バス** | `TinyM5::Display` は SPI 前提。StopWatch (AMOLED QSPI) / PaperMono (EPD) / CoreP4X (MIPI-DSI) / CoreMatrix (LED マトリクスの I2C) はこの構造体に入らない。**電源側はもう届いている**ので、次に大きい設計判断はここ |
 | CoreS3 の GPIO35 兼用 | MISO と D/C を共有しており、CS のたびに GPIO マトリクスの書き換えが要る。**SPI トランザクション層の話なので GFX の領分**。諸元では両方の役割を報告し、注記している |
 

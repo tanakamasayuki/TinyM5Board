@@ -442,6 +442,7 @@ Power.gpioOpenDrain(TinyM5BoardPowerAxp192::Gpio::Io1);  // touch RST
 Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io4);
 Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
 """,
+        sd_spi_cs=4,
     ),
     dict(
         id="Core2",
@@ -470,6 +471,7 @@ Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
                      freq_write=40000000, freq_read=16000000,
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
+        sd_spi_cs=4,
     ),
     dict(
         id="StickS3",
@@ -562,6 +564,7 @@ digitalWrite(21, LOW);
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
         power_on=CORE_S3_POWER_ON,
+        sd_spi_cs=4,
     ),
     dict(
         id="CoreS3SE",
@@ -587,6 +590,7 @@ digitalWrite(21, LOW);
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
         power_on=CORE_S3_POWER_ON,
+        sd_spi_cs=4,
     ),
     dict(
         id="StackChan",
@@ -611,6 +615,7 @@ digitalWrite(21, LOW);
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
         power_on=CORE_S3_POWER_ON,
+        sd_spi_cs=4,
     ),
     dict(
         id="StampPico",
@@ -723,6 +728,7 @@ Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P0);
 Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P1);
 Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P2);
 """,
+        sd_spi_cs=10,
     ),
 ]
 
@@ -733,7 +739,8 @@ Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P2);
 # hardware", which is also what the kHas* flags are derived from.
 OPTIONAL = dict(note="", i2c_int=None, i2c_ext=None, power_hold=None, rgb_led=None,
                 buttons={}, pmic=None, bat_adc=None, rails=(), rail_mv={},
-                io_expander=None, backlight=None, display=None, power_on="")
+                io_expander=None, backlight=None, display=None, sd_spi_cs=None,
+                power_on="")
 
 # Rail names as a board header spells them, mapped to the driver's enum.
 # The class that owns `Power` for each `pmic` value. A PEK button reads
@@ -779,6 +786,18 @@ def derive(b):
     # says Wire.begin() itself would otherwise be reaching for a bus this
     # board does not have.
     d["wire0"] = d["i2c_int"] if d["has_int_i2c"] else d["i2c_ext"]
+    # The card is only this library's business when it sits on the panel's
+    # bus, so the column cannot mean anything without a panel to share.
+    d["has_sd_spi"] = d["sd_spi_cs"] is not None
+    if d["has_sd_spi"]:
+        if not d["has_display"]:
+            raise SystemExit(f"{d['id']}: sd_spi_cs on a board with no display - "
+                             "a card on a bus of its own is a driver's problem, "
+                             "not a bring-up's")
+        if d["display"]["miso"] < 0:
+            raise SystemExit(f"{d['id']}: sd_spi_cs needs MISO - the card is asked "
+                             "whether it is already in SPI mode, and the answer "
+                             "comes back on that wire")
     d["classic"] = soc["classic"]
     return d
 
@@ -827,6 +846,8 @@ def emit_board(entry):
         a('#include "TinyM5Board/PowerCore2.h"\n')
     elif b["pmic"] == "m5pm1":
         a('#include "TinyM5Board/PowerM5pm1.h"\n')
+    if d["has_sd_spi"]:
+        a('#include "TinyM5Board/SdSpiMode.h"\n')
     if b["io_expander"] == "m5ioe1":
         a('#include "TinyM5Board/IoExpanderM5ioe1.h"\n')
     elif b["io_expander"] == "aw9523":
@@ -871,6 +892,16 @@ def emit_board(entry):
         a("  static constexpr int8_t kI2cExtSda = -1;\n")
         a("  static constexpr int8_t kI2cExtScl = -1;\n")
     a(f"  static constexpr int8_t kPowerHold = {b['power_hold'] if b['power_hold'] is not None else -1};\n")
+    # Not one of the four queryable pins (BOARD_CATALOG §3): it is here
+    # because begin() uses it, the way the internal I2C pins are.
+    if d["has_sd_spi"]:
+        a("  /// The TF card's chip select. The card shares the panel's SPI bus\n")
+        a("  /// on this board, so begin() has to quieten it before anything\n")
+        a("  /// reads the panel.\n")
+        a(f"  static constexpr int8_t kSdSpiCs = {d['sd_spi_cs']};\n")
+    else:
+        a("  /// -1: no card on the panel's SPI bus.\n")
+        a("  static constexpr int8_t kSdSpiCs = -1;\n")
     if b["rgb_led"]:
         a(f"  static constexpr int8_t kRgbLed = {b['rgb_led'][0]};\n")
         a(f"  static constexpr uint8_t kRgbLedCount = {b['rgb_led'][1]};\n")
@@ -1032,6 +1063,12 @@ def emit_board(entry):
             a(f"    {line}\n" if line else "\n")
     if b["display"] and b["display"]["rst"] >= 0:
         a(f"    TinyM5::resetPulse({b['display']['rst']});\n")
+    if d["has_sd_spi"]:
+        dd = d["display"]
+        a("    // The card is on the panel's wires. Left in SD mode it answers\n")
+        a("    // the panel id read that a graphics library starts with.\n")
+        a(f"    TinyM5::sdToSpiMode(/*sclk*/ {dd['sclk']}, /*miso*/ {dd['miso']},\n")
+        a(f"                        /*mosi*/ {dd['mosi']}, kSdSpiCs);\n")
     if b["backlight"]:
         a("    Backlight.begin();\n")
     ret = "ok" if b["pmic"] in ("axp192", "axp2101", "core2", "m5pm1") else "true"

@@ -30,6 +30,8 @@ class TinyM5BoardStampS3 {
   static constexpr int8_t kI2cExtSda = 13;
   static constexpr int8_t kI2cExtScl = 15;
   static constexpr int8_t kPowerHold = -1;
+  /// -1: no card on the panel's SPI bus.
+  static constexpr int8_t kSdSpiCs = -1;
   static constexpr int8_t kRgbLed = 21;
   static constexpr uint8_t kRgbLedCount = 1;
   static constexpr int8_t kBtnA = 0;

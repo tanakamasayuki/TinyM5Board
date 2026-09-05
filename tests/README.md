@@ -6,7 +6,7 @@
 cd tests
 uv sync
 uv run pytest --profile host          # everything
-uv run pytest unit --profile host     # the board independent classes, ~7s
+uv run pytest unit --profile host     # the board independent classes, ~16s
 uv run pytest tier0                   # every header, real toolchain, ~2.5 min
 uv run pytest begin --profile host    # the bring-up goldens, ~3.5 min
 ```
@@ -59,20 +59,26 @@ The first run downloads the esp32 core that every `sketch.yaml` pins.
 
 ## `unit/` — the classes that are not per board
 
-A golden only covers `begin()`. The buttons do their work in `update()`,
-which puts nothing on any bus, and they are one class shared by every
-board rather than something a per-board golden could hold. So they are
-checked on their own.
+A golden only covers `begin()`, and it covers it on a bus with nothing on
+the other end. Two things fall outside that:
 
-The clock is an argument (`update(msec)`), so a 600 ms hold costs no wall
-clock and the result cannot depend on how fast the machine is. Every
-expectation is written next to the stimulus that produces it, and the
-sketch reports them to `output/checks.txt`; a `FAIL` line there becomes
-the assertion message.
+- `Button/` — the buttons work in `update()`, which puts nothing on any
+  bus at all. The clock is an argument (`update(msec)`), so a 600 ms hold
+  costs no wall clock and no result depends on machine speed.
+- `SdSpiMode/` — the branch a silent bus cannot produce. With nothing
+  answering, the card always looks like it needs resetting; a card that
+  is already in SPI mode, and must be left alone, needs an answer
+  injected through the SPI transfer hook.
 
-Hand written, not generated - there is no board in it - and it builds and
-runs in about seven seconds, so it is the one to run while working on
-anything under `src/TinyM5Board/`.
+Every expectation is written next to the stimulus that produces it, and
+the sketch reports them to `output/checks.txt`; a `FAIL` line there
+becomes the assertion message. `tinym5_expect.h` does the reporting and
+`tinym5_check.check_unit()` the running, so a new one is a sketch and a
+three-line test.
+
+Hand written, not generated - there is no board in them - and about eight
+seconds each, so this is what to run while working on anything under
+`src/TinyM5Board/`.
 
 ## `begin/` — the bring-up golden
 

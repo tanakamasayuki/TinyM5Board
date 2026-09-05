@@ -19,6 +19,7 @@
 
 #include "TinyM5Board/Common.h"
 #include "TinyM5Board/Button.h"
+#include "TinyM5Board/SdSpiMode.h"
 #include "TinyM5Board/IoExpanderPi4io.h"
 #include "TinyM5Board/BacklightPi4io.h"
 
@@ -35,6 +36,10 @@ class TinyM5BoardStampPLC {
   static constexpr int8_t kI2cExtSda = 2;
   static constexpr int8_t kI2cExtScl = 1;
   static constexpr int8_t kPowerHold = -1;
+  /// The TF card's chip select. The card shares the panel's SPI bus
+  /// on this board, so begin() has to quieten it before anything
+  /// reads the panel.
+  static constexpr int8_t kSdSpiCs = 10;
   static constexpr int8_t kRgbLed = 21;
   static constexpr uint8_t kRgbLedCount = 1;
   static constexpr int8_t kBtnA = -1;
@@ -100,6 +105,10 @@ class TinyM5BoardStampPLC {
     Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P1);
     Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P2);
     TinyM5::resetPulse(3);
+    // The card is on the panel's wires. Left in SD mode it answers
+    // the panel id read that a graphics library starts with.
+    TinyM5::sdToSpiMode(/*sclk*/ 7, /*miso*/ 9,
+                        /*mosi*/ 8, kSdSpiCs);
     Backlight.begin();
     return true && ioOk;
   }

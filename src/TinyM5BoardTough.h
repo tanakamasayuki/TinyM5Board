@@ -19,6 +19,7 @@
 #include "TinyM5Board/Common.h"
 #include "TinyM5Board/Button.h"
 #include "TinyM5Board/PowerAxp192.h"
+#include "TinyM5Board/SdSpiMode.h"
 #include "TinyM5Board/BacklightAxp192.h"
 
 class TinyM5BoardTough {
@@ -34,6 +35,10 @@ class TinyM5BoardTough {
   static constexpr int8_t kI2cExtSda = 32;
   static constexpr int8_t kI2cExtScl = 33;
   static constexpr int8_t kPowerHold = -1;
+  /// The TF card's chip select. The card shares the panel's SPI bus
+  /// on this board, so begin() has to quieten it before anything
+  /// reads the panel.
+  static constexpr int8_t kSdSpiCs = 4;
   static constexpr int8_t kRgbLed = -1;
   static constexpr uint8_t kRgbLedCount = 0;
   static constexpr int8_t kBtnPwr = -1;
@@ -86,6 +91,10 @@ class TinyM5BoardTough {
     Power.gpioOpenDrain(TinyM5BoardPowerAxp192::Gpio::Io1);  // touch RST
     Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io4);
     Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
+    // The card is on the panel's wires. Left in SD mode it answers
+    // the panel id read that a graphics library starts with.
+    TinyM5::sdToSpiMode(/*sclk*/ 18, /*miso*/ 38,
+                        /*mosi*/ 23, kSdSpiCs);
     Backlight.begin();
     return ok;
   }

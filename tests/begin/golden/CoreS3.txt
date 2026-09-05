@@ -29,6 +29,20 @@ i2c0 write 0x58 [03 03]
 i2c0 write 0x34 [90 BF]
 i2c0 write 0x34 [94 1C]
 i2c0 write 0x34 [95 1C]
+pinMode(4, OUTPUT)
+spi begin sclk=36 miso=35 mosi=37
+spi transaction hz=400000 mode=0
+digitalWrite(4, 1)
+spi xfer 16 x FF
+digitalWrite(4, 0)
+spi xfer 7A 00 00 00 00 FD FF FF
+digitalWrite(4, 1)
+spi xfer 16 x FF
+digitalWrite(4, 0)
+spi xfer 40 00 00 00 00 95 FF FF
+digitalWrite(4, 1)
+spi end transaction
+spi end
 i2c0 write 0x34 [90] (no stop)
 i2c0 read  0x34 1 -> [BF]
 i2c0 write 0x34 [90 BF]
@@ -38,7 +52,7 @@ name=M5StackCoreS3 id=10
 pins i2c=12/11 ext=2/1 led=-1/0 hold=-1
 has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=0
 --- display ---
-spi mosi=37 miso=35 sclk=36 dc=35 cs=3 rst=-1 3wire=1
+spi mosi=37 miso=35 sclk=36 dc=35 cs=3 rst=-1 3wire=1 sdcs=4
 freq write=40000000 read=16000000
 panel 320x240 offset=0,0 rotation=3 invert=1
 --- battery ---

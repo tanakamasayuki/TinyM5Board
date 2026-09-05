@@ -47,7 +47,7 @@ name=M5ChainCaptain id=32
 pins i2c=3/2 ext=7/6 led=-1/0 hold=-1
 has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=0
 --- display ---
-spi mosi=16 miso=-1 sclk=15 dc=46 cs=45 rst=-1 3wire=1
+spi mosi=16 miso=-1 sclk=15 dc=46 cs=45 rst=-1 3wire=1 sdcs=-1
 freq write=40000000 read=16000000
 panel 240x240 offset=0,0 rotation=2 invert=1
 --- battery ---

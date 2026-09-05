@@ -24,6 +24,7 @@
 #include "TinyM5Board/Common.h"
 #include "TinyM5Board/Button.h"
 #include "TinyM5Board/PowerCore2.h"
+#include "TinyM5Board/SdSpiMode.h"
 #include "TinyM5Board/BacklightCore2.h"
 
 class TinyM5BoardCore2 {
@@ -39,6 +40,10 @@ class TinyM5BoardCore2 {
   static constexpr int8_t kI2cExtSda = 32;
   static constexpr int8_t kI2cExtScl = 33;
   static constexpr int8_t kPowerHold = -1;
+  /// The TF card's chip select. The card shares the panel's SPI bus
+  /// on this board, so begin() has to quieten it before anything
+  /// reads the panel.
+  static constexpr int8_t kSdSpiCs = 4;
   static constexpr int8_t kRgbLed = 25;
   static constexpr uint8_t kRgbLedCount = 1;
   static constexpr int8_t kBtnPwr = -1;
@@ -85,6 +90,10 @@ class TinyM5BoardCore2 {
     // bring-up - including the panel reset, which is a rail on one
     // chip and a chip GPIO on the other.
     const bool ok = Power.begin(Wire);
+    // The card is on the panel's wires. Left in SD mode it answers
+    // the panel id read that a graphics library starts with.
+    TinyM5::sdToSpiMode(/*sclk*/ 18, /*miso*/ 38,
+                        /*mosi*/ 23, kSdSpiCs);
     Backlight.begin();
     return ok;
   }

@@ -9,10 +9,7 @@
 // so a 600 ms hold costs no wall clock and no result depends on how
 // fast the machine running the test happens to be.
 #include <TinyM5Board/Button.h>
-
-#include <stdarg.h>
-#include <stdio.h>
-#include <sys/stat.h>
+#include <tinym5_expect.h>
 
 // A plain GPIO button: read on every update().
 static bool g_raw = false;
@@ -30,33 +27,8 @@ static TinyM5BoardButton g_slow(
     },
     true);
 
-static FILE *g_out = nullptr;
-static int g_checks = 0;
-static int g_failed = 0;
-
-static void say(const char *fmt, ...)
-{
-  char buf[192];
-  va_list ap;
-  va_start(ap, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, ap);
-  va_end(ap);
-  if (g_out) {
-    fprintf(g_out, "%s\n", buf);
-  }
-  Serial.println(buf);
-}
-
-static void check(const char *what, long got, long want)
-{
-  ++g_checks;
-  if (got == want) {
-    say("ok   %s = %ld", what, got);
-  } else {
-    ++g_failed;
-    say("FAIL %s = %ld, want %ld", what, got, want);
-  }
-}
+using TinyM5Expect::check;
+using TinyM5Expect::say;
 
 /// One update() at a chosen time, with the button held in a chosen state.
 static void at(uint32_t msec, bool raw)
@@ -193,9 +165,7 @@ static void rateLimited()
 void setup()
 {
   Serial.begin(115200);
-  mkdir("output", 0755);
-  g_out = fopen("output/checks.txt", "w");
-  Serial.println("TEST start Button");
+  TinyM5Expect::start("Button");
 
   debounce();
   singleClick();
@@ -203,12 +173,7 @@ void setup()
   hold();
   rateLimited();
 
-  say("%d checks, %d failed", g_checks, g_failed);
-  if (g_out) {
-    fclose(g_out);
-    g_out = nullptr;
-  }
-  Serial.println("TEST done Button");
+  TinyM5Expect::finish();
 }
 
 void loop() { delay(10); }

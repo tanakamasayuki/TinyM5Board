@@ -37,6 +37,8 @@ class TinyM5BoardChainCaptain {
   static constexpr int8_t kI2cExtSda = 7;
   static constexpr int8_t kI2cExtScl = 6;
   static constexpr int8_t kPowerHold = -1;
+  /// -1: no card on the panel's SPI bus.
+  static constexpr int8_t kSdSpiCs = -1;
   static constexpr int8_t kRgbLed = -1;
   static constexpr uint8_t kRgbLedCount = 0;
   static constexpr int8_t kBtnA = 1;

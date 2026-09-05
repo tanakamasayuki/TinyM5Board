@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 
 BEGIN = Path(__file__).parent / "begin"
+UNIT = Path(__file__).parent / "unit"
 GOLDEN = BEGIN / "golden"
 
 
@@ -41,3 +42,20 @@ def check_begin(dut, request, board):
     assert trace == golden.read_text(encoding="utf-8"), (
         f"{board}: begin() no longer matches its frozen golden"
     )
+
+
+def check_unit(dut, test):
+    """Run one self-checking unit sketch and report what it found.
+
+    The sketch holds the expectations - each one written next to the
+    stimulus that produces it - so all this has to do is start it and
+    quote the lines that failed.
+    """
+    dut.expect(f"TEST start {test}", timeout=60)
+    dut.expect(f"TEST done {test}", timeout=60)
+
+    checks = next(UNIT.glob(f"{test}/output/checks.txt")).read_text(encoding="utf-8")
+    lines = checks.splitlines()
+    failed = [ln for ln in lines if ln.startswith("FAIL")]
+    assert not failed, "\n".join([f"{test}:"] + failed)
+    assert any(ln.startswith("ok") for ln in lines), f"{test}: no checks ran"

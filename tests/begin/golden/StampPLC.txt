@@ -43,6 +43,20 @@ pinMode(3, OUTPUT)
 digitalWrite(3, 1)
 digitalWrite(3, 0)
 digitalWrite(3, 1)
+pinMode(10, OUTPUT)
+spi begin sclk=7 miso=9 mosi=8
+spi transaction hz=400000 mode=0
+digitalWrite(10, 1)
+spi xfer 16 x FF
+digitalWrite(10, 0)
+spi xfer 7A 00 00 00 00 FD FF FF
+digitalWrite(10, 1)
+spi xfer 16 x FF
+digitalWrite(10, 0)
+spi xfer 40 00 00 00 00 95 FF FF
+digitalWrite(10, 1)
+spi end transaction
+spi end
 i2c0 write 0x43 [03] (no stop)
 i2c0 read  0x43 1 -> [00]
 i2c0 write 0x43 [03 80]
@@ -63,6 +77,6 @@ name=M5StampPLC id=21
 pins i2c=13/15 ext=2/1 led=21/1 hold=-1
 has display=1 backlight=1 battery=0 intI2c=1 extI2c=1 shared=0
 --- display ---
-spi mosi=8 miso=9 sclk=7 dc=6 cs=12 rst=-1 3wire=1
+spi mosi=8 miso=9 sclk=7 dc=6 cs=12 rst=-1 3wire=1 sdcs=10
 freq write=40000000 read=16000000
 panel 135x240 offset=52,40 rotation=1 invert=1

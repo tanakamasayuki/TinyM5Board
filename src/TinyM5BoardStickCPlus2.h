@@ -33,6 +33,8 @@ class TinyM5BoardStickCPlus2 {
   static constexpr int8_t kI2cExtSda = 32;
   static constexpr int8_t kI2cExtScl = 33;
   static constexpr int8_t kPowerHold = 4;
+  /// -1: no card on the panel's SPI bus.
+  static constexpr int8_t kSdSpiCs = -1;
   static constexpr int8_t kRgbLed = -1;
   static constexpr uint8_t kRgbLedCount = 0;
   static constexpr int8_t kBtnA = 37;

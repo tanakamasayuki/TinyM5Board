@@ -29,6 +29,8 @@ class TinyM5BoardAtomLite {
   static constexpr int8_t kI2cExtSda = 26;
   static constexpr int8_t kI2cExtScl = 32;
   static constexpr int8_t kPowerHold = -1;
+  /// -1: no card on the panel's SPI bus.
+  static constexpr int8_t kSdSpiCs = -1;
   static constexpr int8_t kRgbLed = 27;
   static constexpr uint8_t kRgbLedCount = 1;
   static constexpr int8_t kBtnA = 39;

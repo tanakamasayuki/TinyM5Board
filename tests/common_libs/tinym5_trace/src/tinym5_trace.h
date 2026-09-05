@@ -19,6 +19,7 @@
 
 #include <Arduino.h>
 #include <HostBus.h>
+#include <SPI.h>
 #include <Wire.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -32,8 +33,16 @@ inline FILE *&file()
   return f;
 }
 
+inline void spiFlush();
+
 inline void line(const char *fmt, ...)
 {
+  // Bytes are gathered into groups rather than printed one per line, so
+  // anything else that gets recorded has to close the group it
+  // interrupts. spiFlush() empties the buffer before it calls back in
+  // here, so this cannot recurse.
+  spiFlush();
+
   char buf[256];
   va_list ap;
   va_start(ap, fmt);
@@ -80,6 +89,79 @@ inline void hex(char *out, size_t outlen, const uint8_t *data, size_t len)
     n += snprintf(out + n, outlen - n, i ? " %02X" : "%02X", data[i]);
   }
   out[n] = 0;
+}
+
+// --- SPI ------------------------------------------------------------
+//
+// One line per group of bytes rather than per byte: the SD card wake-up
+// sends 16 identical clock bytes at a time, and sixteen lines of FF
+// would bury the two commands that matter.
+
+inline uint8_t *spiBuf()
+{
+  static uint8_t b[64];
+  return b;
+}
+
+inline size_t &spiLen()
+{
+  static size_t n = 0;
+  return n;
+}
+
+inline void spiFlush()
+{
+  const size_t n = spiLen();
+  if (n == 0) return;
+  spiLen() = 0;  // cleared first: line() calls back in here
+
+  bool same = true;
+  for (size_t i = 1; i < n; ++i) {
+    if (spiBuf()[i] != spiBuf()[0]) {
+      same = false;
+      break;
+    }
+  }
+  if (same && n > 4) {
+    line("spi xfer %u x %02X", (unsigned)n, spiBuf()[0]);
+  } else {
+    char buf[192];
+    hex(buf, sizeof(buf), spiBuf(), n);
+    line("spi xfer %s", buf);
+  }
+}
+
+/// Returns what a bus with nothing on it returns, which is what the host
+/// core does with no hook at all - recording must not change the answer.
+inline uint8_t onSpiTransfer(uint8_t out, void *)
+{
+  if (spiLen() >= 64) spiFlush();
+  spiBuf()[spiLen()++] = out;
+  return 0xFF;
+}
+
+inline void onSpiTransaction(bool active, const SPISettings &settings, void *)
+{
+  if (active) {
+    line("spi transaction hz=%u mode=%u", (unsigned)settings._clock,
+         (unsigned)settings._dataMode);
+  } else {
+    line("spi end transaction");
+  }
+}
+
+inline void onSpiLifecycle(SPIClass::LifecycleEvent event, const SPIClass &spi, void *)
+{
+  switch (event) {
+    case SPIClass::kBegin:
+      line("spi begin sclk=%d miso=%d mosi=%d", spi.sck(), spi.miso(), spi.mosi());
+      break;
+    case SPIClass::kEnd: line("spi end"); break;
+    case SPIClass::kConfig:
+      line("spi config hz=%u mode=%u", (unsigned)spi.settings()._clock,
+           (unsigned)spi.settings()._dataMode);
+      break;
+  }
 }
 
 inline void onI2cLifecycle(TwoWire::LifecycleEvent event, const TwoWire &wire, void *)
@@ -180,6 +262,11 @@ inline void start(const char *board)
   Wire1.setWriteHook(onI2cWrite<1>);
   Wire1.setReadHook(onI2cRead<1>);
   Wire1.setLifecycleHook(onI2cLifecycle);
+  // The panel's bus. Nothing draws on it during bring-up, but the boards
+  // whose TF card shares it have to quieten the card here.
+  SPI.setTransferHook(onSpiTransfer);
+  SPI.setTransactionHook(onSpiTransaction);
+  SPI.setLifecycleHook(onSpiLifecycle);
   line("--- begin() ---");
 }
 
@@ -204,8 +291,8 @@ inline void finish()
   {
     const auto d = TINYM5_BOARD::display();
     line("--- display ---");
-    line("spi mosi=%d miso=%d sclk=%d dc=%d cs=%d rst=%d 3wire=%d", d.mosi, d.miso,
-         d.sclk, d.dc, d.cs, d.rst, d.threeWire);
+    line("spi mosi=%d miso=%d sclk=%d dc=%d cs=%d rst=%d 3wire=%d sdcs=%d", d.mosi,
+         d.miso, d.sclk, d.dc, d.cs, d.rst, d.threeWire, TINYM5_BOARD::kSdSpiCs);
     line("freq write=%u read=%u", (unsigned)d.freqWrite, (unsigned)d.freqRead);
     line("panel %ux%u offset=%u,%u rotation=%u invert=%d", d.width, d.height,
          d.offsetX, d.offsetY, d.rotation, d.invert);
@@ -220,6 +307,9 @@ inline void finish()
   line("mV=%d level=%d", (int)Board.Power.getBatteryVoltage(),
        (int)Board.Power.getBatteryLevel());
 #endif
+  spiFlush();
+  SPI.clearHooks();
+  SPI.setLifecycleHook(nullptr);
   HostArduino::clearPinHooks();
   HostArduino::clearAnalogHooks();
   Wire.clearHooks();
