@@ -733,6 +733,40 @@ pinMode(38, INPUT_PULLUP);
 """,
     ),
     dict(
+        id="Paper",
+        name="M5Paper",
+        board_id=7,
+        family="Paper",
+        soc="esp32",
+        note="The original 960x540 electrophoretic tablet, on a classic ESP32.\n"
+             "Its IT8951 controller takes commands as SPI words rather than\n"
+             "through a D/C pin, and holds BUSY (GPIO 27) while it refreshes.\n"
+             "The card is on the panel's bus, so begin() quietens it first.\n"
+             "GPIO 5 switches the 5 V output on the Grove port. It is left\n"
+             "configured and off: what is plugged in is not something a board\n"
+             "bring-up gets to guess (D35).",
+        i2c_int=(21, 22),
+        i2c_ext=(25, 32),
+        power_hold=2,
+        rgb_led=None,
+        buttons={"A": 37, "B": 38, "C": 39},
+        pmic="adc",
+        bat_adc=(35, 2000),
+        backlight=None,
+        display=dict(bus="spi", mosi=12, miso=13, sclk=14, dc=-1, cs=15, rst=23,
+                     busy=27,
+                     freq_write=40000000, freq_read=20000000,
+                     w=960, h=540, ox=0, oy=0, rotation=3, invert=False,
+                     three_wire=False),
+        sd_spi_cs=4,
+        power_on="""\
+// The Grove port's 5 V switch. Configured but not turned on - see the
+// note above. (M5Unified Power_Class.cpp:632)
+pinMode(5, OUTPUT);
+digitalWrite(5, LOW);
+""",
+    ),
+    dict(
         id="PaperMono",
         name="M5PaperMono",
         board_id=29,
@@ -784,9 +818,6 @@ delay(8);
 Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io5, true);
 Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io6, true);
 delay(2);
-// The BUSY line is an input the driver polls. Nothing here waits on it,
-// but leaving the pin floating would make that first poll a coin toss.
-pinMode(18, INPUT);
 """,
     ),
     dict(
@@ -1255,6 +1286,11 @@ def emit_board(entry):
             a(f"    {line}\n" if line else "\n")
     if b["display"] and b["display"]["rst"] >= 0:
         a(f"    TinyM5::resetPulse({b['display']['rst']});\n")
+    if b["display"] and b["display"].get("busy", -1) >= 0:
+        a("    // The panel holds this line while it refreshes. Nothing here\n")
+        a("    // waits on it, but a floating pin would make the driver's first\n")
+        a("    // read a coin toss.\n")
+        a(f"    pinMode({b['display']['busy']}, INPUT);\n")
     if d["has_sd_spi"]:
         dd = d["display"]
         a("    // The card is on the panel's wires. Left in SD mode it answers\n")

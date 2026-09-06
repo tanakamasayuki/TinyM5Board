@@ -1,0 +1,39 @@
+--- begin() ---
+pinMode(2, OUTPUT)
+digitalWrite(2, 1)
+i2c0 begin sda=21 scl=22 hz=100000
+i2c1 begin sda=25 scl=32 hz=100000
+pinMode(37, INPUT)
+pinMode(38, INPUT)
+pinMode(39, INPUT)
+pinMode(5, OUTPUT)
+digitalWrite(5, 0)
+pinMode(23, OUTPUT)
+digitalWrite(23, 1)
+digitalWrite(23, 0)
+digitalWrite(23, 1)
+pinMode(27, INPUT)
+pinMode(4, OUTPUT)
+spi begin sclk=14 miso=13 mosi=12
+spi transaction hz=400000 mode=0
+digitalWrite(4, 1)
+spi xfer 16 x FF
+digitalWrite(4, 0)
+spi xfer 7A 00 00 00 00 FD FF FF
+digitalWrite(4, 1)
+spi xfer 16 x FF
+digitalWrite(4, 0)
+spi xfer 40 00 00 00 00 95 FF FF
+digitalWrite(4, 1)
+spi end transaction
+spi end
+--- board ---
+name=M5Paper id=7
+pins i2c=21/22 ext=25/32 led=-1/0 hold=2
+has display=1 backlight=0 battery=1 intI2c=1 extI2c=1 shared=0
+--- display ---
+bus=spi mosi=12 miso=13 io2=-1 io3=-1 sclk=14 dc=-1 cs=15 rst=-1 3wire=0 sdcs=4 busy=27
+freq write=40000000 read=20000000
+panel 960x540 offset=0,0 rotation=3 invert=0
+--- battery ---
+mV=4000 level=87

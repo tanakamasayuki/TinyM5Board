@@ -81,6 +81,8 @@
 #include "TinyM5BoardStackChan.h"
 #elif defined(TINYM5_STOPWATCH)
 #include "TinyM5BoardStopWatch.h"
+#elif defined(TINYM5_PAPER)
+#include "TinyM5BoardPaper.h"
 #elif defined(TINYM5_PAPERMONO)
 #include "TinyM5BoardPaperMono.h"
 #elif defined(TINYM5_STAMPPICO)

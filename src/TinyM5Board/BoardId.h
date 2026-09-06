@@ -12,6 +12,7 @@ enum class BoardId : uint16_t {
   Unknown = 0,
   Core2 = 2,
   StickC = 6,
+  Paper = 7,
   Tough = 8,
   Station = 9,
   CoreS3 = 10,

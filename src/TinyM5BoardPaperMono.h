@@ -118,8 +118,9 @@ class TinyM5BoardPaperMono {
     Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io5, true);
     Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io6, true);
     delay(2);
-    // The BUSY line is an input the driver polls. Nothing here waits on it,
-    // but leaving the pin floating would make that first poll a coin toss.
+    // The panel holds this line while it refreshes. Nothing here
+    // waits on it, but a floating pin would make the driver's first
+    // read a coin toss.
     pinMode(18, INPUT);
     Backlight.begin();
     return ok && ioOk;
