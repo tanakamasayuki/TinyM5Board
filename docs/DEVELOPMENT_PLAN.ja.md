@@ -4,7 +4,7 @@
 
 ## 1. 現在地
 
-**36 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
+**37 機種。ADC / AXP192 / AXP2101 / M5PM1 / AW32001 の 5 系統が、ホストのゴールデンと
 実物のツールチェーンのビルド（Tier 0）まで通っている。SoC は esp32 / S3 /
 C3 / C6 / H2 / **P4** の 6 種類。**
 
@@ -12,14 +12,14 @@ C3 / C6 / H2 / **P4** の 6 種類。**
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **36 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan / **CoreP4X**、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / Dial / DinMeter / StopWatch / Cardputer / VAMeter / **AirQ**、Paper: PaperMono / Paper / **CoreInk** |
-| 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
-| IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / **`IoExpanderPi4io`**。**主要 3 種が揃った** |
+| ボード定義 | **37 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan / **CoreP4X**、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / Dial / DinMeter / StopWatch / Cardputer / VAMeter / AirQ / **NessoN1**、Paper: PaperMono / Paper / **CoreInk** |
+| 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） / **`PowerAw32001`**（充電器 + 燃料計の 2 チップ、D42） |
+| IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / `IoExpanderPi4io`。**主要 3 種**。**1 機種に 2 個**も持てる（D43） |
 | バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / AXP2101 (Bldo1・Dldo1) / Core2 / M5IOE1 の PWM / **M5PM1 の PWM**。**すべて M5GFX と同じカーブ** |
 | ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。名前はカタログから導出（CoreInk の `Ext` で 5 つ目）。**click / hold / click カウントまで M5Unified と同じ状態機械**（D36） |
 | 表示 | `TinyM5::Display`（SPI / QSPI / EPD の BUSY）と **`DisplayDsi`**（MIPI-DSI、D41） |
-| `tests/begin/` | **37 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
-| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（36 機種 + 入口 2 本 / **6 種類の SoC**） |
+| `tests/begin/` | **38 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
+| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（37 機種 + 入口 2 本 / **6 種類の SoC**） |
 | `tests/tier2/` | **サンプルを実機コアで建てる**（D20 の裏取り）。4 本 / 約 28 秒 |
 | `tests/unit/` | **ボード非依存のクラス**の検査。Button の状態機械と SD のモード落とし（39 + 13 検査 / 約 16 秒） |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` / `examples` は別ジョブ |
@@ -72,11 +72,11 @@ C3 / C6 / H2 / **P4** の 6 種類。**
 ### 1.3 テストの所要時間
 
 `tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
-**1 スケッチ約 10 秒**（実測）なので 37 本で 6 分。**群ごとに並列化してある**ので
+**1 スケッチ約 10 秒**（実測）なので 38 本で 6 分。**群ごとに並列化してある**ので
 CI では最長の群の時間で済み、ローカルは `pytest begin/Stick` のように絞れる
 （4 機種で約 30 秒 / 実測）。
 
-`tests/tier0` は 38 本ビルドして**約 3 分**、`tests/unit` は 2 本で**約 16 秒**。
+`tests/tier0` は 39 本ビルドして**約 3 分**、`tests/unit` は 2 本で**約 16 秒**。
 **全部で 11〜19 分**（35 機種 + サンプル 4 本 / ローカル実測。他のビルドと並走すると倍近く振れる）。
 どちらも機種数に線形だが、実行が無い分だけ安い。
 ボード非依存の変更は `unit` だけ回せばよい。
@@ -261,7 +261,7 @@ M5GFX.cpp 2463-2510 で 2 つに分かれる。
 AirQ も 2 つのコントローラが流通しているが、**ピンも寸法も同じ**なので入れた。
 違いはドライバが見つける話で、ヘッダが持つ話ではない。
 
-#### Tab5 / Tab5X / NessoN1 —— エキスパンダ 2 個は問題ではなかった
+#### ~~Tab5 / Tab5X / NessoN1~~ —— NessoN1 は通した。残り 2 つは表示側
 
 **「PI4IO が 2 個だからスキーマ変更が要る」と書いていたが、そこは詰まりではない。**
 `IoExpanderPi4io` はもともとアドレスをコンストラクタ引数に取る（Tab5 の
@@ -276,12 +276,12 @@ AirQ も 2 つのコントローラが流通しているが、**ピンも寸法�
 | **BQ27220** | 燃料計 | ドライバ無し |
 | INA226 | 電流計（Tab5） | デバイス扱いで対象外 |
 
-`pmic=None` で入れると `kHasBattery` が嘘になるので、**AW32001 と BQ27220 を
-書くのが先**。書けば 3 機種まとめて届く（NessoN1 は表示のピンも上流のコメントで
-全部名前が付いていて読みやすい）。
+→ **`PowerAw32001` を書いて（D42）、エキスパンダ 2 個対応も入れ直し（D43）、
+NessoN1 を通した。** 期待どおり、詰まっていたのは電源チップのほうだった。
 
-**エキスパンダ 2 個対応は、その機種と一緒に入れる。** 使う機種が無いまま
-生成側だけ 2 個対応にすると、**誰も通らない分岐がジェネレータに残る。**
+**Tab5 / Tab5X はもう電源とエキスパンダでは詰まらない。** 残るのは表示で、
+MIPI-DSI のパネル諸元（CoreP4X と同じ形で読める）と、**タッチ ID による
+パネル分岐**が上流にあるので、そこを読み解く必要がある。
 
 #### PaperS3 / PaperColor —— 上流の諸元に読めない点がある
 

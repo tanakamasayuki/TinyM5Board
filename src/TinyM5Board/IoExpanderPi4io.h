@@ -111,6 +111,16 @@ class TinyM5BoardIoExpanderPi4io {
     delay(settleMs);
   }
 
+  /// Which pins may pull the shared interrupt line. This library polls
+  /// rather than waiting on that line, but the boards that use it come
+  /// up with a mask their schematic expects, so it is transcribed rather
+  /// than assumed. 1 = masked.
+  void setInterruptMask(uint8_t mask) { _reg.write8(0x11, mask); }
+
+  /// The level each input is compared against when it decides whether to
+  /// interrupt. Meaningless without the mask above, and set beside it.
+  void setInputDefault(uint8_t levels) { _reg.write8(0x09, levels); }
+
   TinyM5::I2cReg &reg() { return _reg; }
 
  private:

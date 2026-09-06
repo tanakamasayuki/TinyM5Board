@@ -362,6 +362,74 @@ digitalWrite(2, LOW);
         power_on="",
     ),
     dict(
+        id="NessoN1",
+        name="ArduinoNessoN1",
+        board_id=23,
+        family="Other",
+        soc="esp32c6",
+        note="A LoRa handheld, and the first board here with two expanders.\n"
+             "One holds the buttons and the radio's control lines; the other\n"
+             "holds the panel's reset, the backlight and the system rails, so\n"
+             "both are bring-up rather than devices.\n"
+             "Its Grove port is the internal bus - one set of pins, level\n"
+             "shifted - so kSharesI2cBus is true and only Wire is opened.\n"
+             "Power is a pair too: an AW32001 charger with a BQ27220 gauge\n"
+             "beside it, because neither answers both questions.",
+        i2c_int=(10, 8),
+        i2c_ext=(10, 8),
+        power_hold=None,
+        rgb_led=None,
+        buttons={"A": ("io", "P0"), "B": ("io", "P1")},
+        pmic="aw32001",
+        io_expander=("pi4io", "pi4io"),
+        backlight=("pi4io_switch", "Io2", "P6", False),
+        display=dict(bus="spi", mosi=21, miso=22, sclk=20, dc=16, cs=17, rst=-1,
+                     freq_write=40000000, freq_read=16000000,
+                     w=135, h=240, ox=52, oy=40, rotation=0, invert=True,
+                     three_wire=True),
+        power_on="""\
+// The first expander (0x43) is the radio's and the buttons'. P0 and P1
+// are the two front buttons, P2-P4 are unused, P5 the LNA enable, P6 the
+// RF switch and P7 the LoRa module's reset, which is released here.
+// (M5GFX.cpp and M5Unified Power_Class.cpp agree register for register.)
+Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P0);
+Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P1);
+Io.setPullNone(TinyM5BoardIoExpanderPi4io::Io::P2);
+Io.setPullNone(TinyM5BoardIoExpanderPi4io::Io::P3);
+Io.setPullNone(TinyM5BoardIoExpanderPi4io::Io::P4);
+Io.enableOutput(TinyM5BoardIoExpanderPi4io::Io::P5, false);
+Io.setPullNone(TinyM5BoardIoExpanderPi4io::Io::P5);
+Io.enableOutput(TinyM5BoardIoExpanderPi4io::Io::P6, false, false);
+Io.enableOutput(TinyM5BoardIoExpanderPi4io::Io::P7, true, false);
+// Only the two buttons may pull the interrupt line. Nothing here waits
+// on it - the buttons are polled - but the board comes up with this mask
+// and changing it is not this library's decision to make.
+Io.setInputDefault(0b00000011);
+Io.setInterruptMask(0b11111100);
+// The second expander (0x44) is the system's. P0 switches the whole
+// board off and stays low, P1 is the panel's reset, P2 the external 5 V,
+// P6 the backlight and P7 the status LED, which is off when high.
+Io2.enableOutput(TinyM5BoardIoExpanderPi4io::Io::P0, false);
+Io2.enableOutput(TinyM5BoardIoExpanderPi4io::Io::P1, false);
+Io2.enableOutput(TinyM5BoardIoExpanderPi4io::Io::P2, false);
+Io2.enableOutput(TinyM5BoardIoExpanderPi4io::Io::P6, false);
+Io2.enableOutput(TinyM5BoardIoExpanderPi4io::Io::P7, true, false);
+// P3 and P4 are not connected and P5 senses VIN. Upstream pulls all
+// three down rather than leaving them floating, and so does this.
+//
+// Upstream also takes P5 out of high impedance. That would enable the
+// driver on a pin the board reads, so it is left as the chip's reset
+// leaves it - the one place here that does not follow M5GFX register
+// for register.
+Io2.setPullDown(TinyM5BoardIoExpanderPi4io::Io::P3);
+Io2.setPullDown(TinyM5BoardIoExpanderPi4io::Io::P4);
+Io2.setPullDown(TinyM5BoardIoExpanderPi4io::Io::P5);
+// The panel's reset is on that expander rather than a pin, so the pulse
+// happens here instead of through TinyM5::resetPulse().
+Io2.resetPulse(TinyM5BoardIoExpanderPi4io::Io::P1);
+""",
+    ),
+    dict(
         id="Dial",
         name="M5Dial",
         board_id=12,
@@ -1106,6 +1174,7 @@ POWER_CLASS = {
     "core2": "TinyM5BoardPowerCore2",
     "m5pm1": "TinyM5BoardPowerM5pm1",
     "axp2101": "TinyM5BoardPowerAxp2101",
+    "aw32001": "TinyM5BoardPowerAw32001",
 }
 IOE_CLASS = {
     "m5ioe1": "TinyM5BoardIoExpanderM5ioe1",
@@ -1165,6 +1234,20 @@ def derive(b):
                                           ("mosi", "miso", "sclk", "dc", "cs", "rst")):
             raise SystemExit(f"{d['id']}: a dsi panel has no pins to report")
     d["has_dsi"] = d["display_dsi"] is not None
+    # One chip or two. The NessoN1 puts its buttons on one and the
+    # panel's reset and backlight on the other, so both are bring-up.
+    kinds = d["io_expander"]
+    if kinds is None:
+        kinds = ()
+    elif isinstance(kinds, str):
+        kinds = (kinds,)
+    d["io_expanders"] = [
+        dict(kind=k, member="Io" if i == 0 else f"Io{i + 1}", index=i)
+        for i, k in enumerate(kinds)
+    ]
+    if len(d["io_expanders"]) > 2:
+        raise SystemExit(f"{d['id']}: three expanders - the second address is "
+                         "the last one this driver knows")
     d["has_sd_spi"] = d["sd_spi_cs"] is not None
     if d["has_sd_spi"]:
         if not d["has_display"]:
@@ -1188,6 +1271,22 @@ def button_names():
     than a preprocessor error.
     """
     return sorted({name for b in BOARDS for name in b.get("buttons", {})})
+
+
+def ioe_of(d, spec):
+    """Which expander a spec means.
+
+    The short form - ("io", "P0") - is the first one, which is the only
+    one on every board but the NessoN1. The long form names the member:
+    ("io", "Io2", "P0").
+    """
+    named = [e for e in d["io_expanders"] if e["member"] in spec]
+    if named:
+        return named[0]
+    if not d["io_expanders"]:
+        raise SystemExit(f"{d['id']}: {spec} needs an expander and the board "
+                         "has none")
+    return d["io_expanders"][0]
 
 
 def button_pin(spec):
@@ -1234,14 +1333,13 @@ def emit_board(entry):
         a('#include "TinyM5Board/PowerCore2.h"\n')
     elif b["pmic"] == "m5pm1":
         a('#include "TinyM5Board/PowerM5pm1.h"\n')
+    elif b["pmic"] == "aw32001":
+        a('#include "TinyM5Board/PowerAw32001.h"\n')
     if d["has_sd_spi"]:
         a('#include "TinyM5Board/SdSpiMode.h"\n')
-    if b["io_expander"] == "m5ioe1":
-        a('#include "TinyM5Board/IoExpanderM5ioe1.h"\n')
-    elif b["io_expander"] == "aw9523":
-        a('#include "TinyM5Board/IoExpanderAw9523.h"\n')
-    elif b["io_expander"] == "pi4io":
-        a('#include "TinyM5Board/IoExpanderPi4io.h"\n')
+    for kind in dict.fromkeys(e["kind"] for e in d["io_expanders"]):
+        header = IOE_CLASS[kind].removeprefix("TinyM5Board")
+        a(f'#include "TinyM5Board/{header}.h"\n')
     if b["backlight"]:
         if b["backlight"][0] == "pwm":
             a('#include "TinyM5Board/BacklightPwm.h"\n')
@@ -1340,16 +1438,28 @@ def emit_board(entry):
     elif b["pmic"] == "axp2101":
         a("  // ---- power ----\n")
         a("  TinyM5BoardPowerAxp2101 Power;\n\n")
+    elif b["pmic"] == "aw32001":
+        a("  // ---- power ----\n")
+        a("  // Two chips behind one member: the charger and the gauge that\n")
+        a("  // measures what it is charging.\n")
+        a("  TinyM5BoardPowerAw32001 Power;\n\n")
     elif b["pmic"] == "core2":
         a("  // ---- power ----\n")
         a("  // Two chips are possible under this one product name, so the\n")
         a("  // bring-up, the panel reset and the backlight all live behind\n")
         a("  // this one object. It asks the chip which it is.\n")
         a("  TinyM5BoardPowerCore2 Power;\n\n")
-    if b["io_expander"]:
+    if d["io_expanders"]:
         a("  // ---- I/O expander ----\n")
         a("  // Not spare pins: at least one line the panel needs is in here.\n")
-        a(f"  {IOE_CLASS[b['io_expander']]} Io;\n\n")
+        for e in d["io_expanders"]:
+            cls_io = IOE_CLASS[e["kind"]]
+            if e["index"] == 0:
+                a(f"  {cls_io} {e['member']};\n")
+            else:
+                a("  // The second one answers at the other address.\n")
+                a(f"  {cls_io} {e['member']}{{{cls_io}::kAddressAlt}};\n")
+        a("\n")
     if b["backlight"]:
         a("  // ---- backlight ----\n")
         if b["backlight"][0] == "pwm":
@@ -1367,10 +1477,11 @@ def emit_board(entry):
             ch = b["backlight"][0].split("_")[1].capitalize()
             a(f"  TinyM5BoardBacklightAxp2101<TinyM5::Axp2101Light::{ch}> Backlight{{Power}};\n\n")
         elif b["backlight"][0] == "pi4io_switch":
-            _, pin, active_low = b["backlight"]
+            e = ioe_of(d, b["backlight"])
+            pin, active_low = b["backlight"][-2], b["backlight"][-1]
             a(f"  // On/off only - this board has no way to dim.\n"
               f"  TinyM5BoardBacklightPi4io Backlight{{\n"
-              f"      Io, TinyM5BoardIoExpanderPi4io::Io::{pin}, "
+              f"      {e['member']}, TinyM5BoardIoExpanderPi4io::Io::{pin}, "
               f"{'true' if active_low else 'false'}}};\n\n")
         elif b["backlight"][0] == "m5pm1_pwm":
             _, ch, pin, hz = b["backlight"]
@@ -1392,12 +1503,14 @@ def emit_board(entry):
             a("  // are rate limited to the debounce interval.\n")
         for name, spec in b["buttons"].items():
             if isinstance(spec, tuple) and spec and spec[0] == "io":
+                e = ioe_of(d, spec)
+                cls_io = IOE_CLASS[e["kind"]]
                 a(f"  TinyM5BoardButton Btn{name}{{\n")
                 a("      [](void *p) {\n")
-                a(f"        return !static_cast<{IOE_CLASS[b['io_expander']]} *>(p)->read(\n")
-                a(f"            {IOE_CLASS[b['io_expander']]}::Io::{spec[1]});\n")
+                a(f"        return !static_cast<{cls_io} *>(p)->read(\n")
+                a(f"            {cls_io}::Io::{spec[-1]});\n")
                 a("      },\n")
-                a("      &Io, true};\n")
+                a(f"      &{e['member']}, true}};\n")
                 continue
             if spec == "pek":
                 a(f"  TinyM5BoardButton Btn{name}{{\n")
@@ -1438,18 +1551,19 @@ def emit_board(entry):
         a("    // both survive a power cycle and both can make this board look\n")
         a("    // dead if something else set them.\n")
         a("    const bool ok = Power.begin(Wire);\n")
-    elif b["pmic"] == "axp2101":
+    elif b["pmic"] in ("axp2101", "aw32001"):
         a("    const bool ok = Power.begin(Wire);\n")
     elif b["pmic"] == "core2":
         a("    // Asks the chip which of the two it is, then runs that one's\n")
         a("    // bring-up - including the panel reset, which is a rail on one\n")
         a("    // chip and a chip GPIO on the other.\n")
         a("    const bool ok = Power.begin(Wire);\n")
-    if b["io_expander"] == "m5ioe1":
+    if d["io_expanders"] and d["io_expanders"][0]["kind"] == "m5ioe1":
         a("    // Same idle-sleep trap as the PMIC, and the same fix.\n")
-        a("    const bool ioOk = Io.begin(Wire);\n")
-    elif b["io_expander"]:
-        a("    const bool ioOk = Io.begin(Wire);\n")
+    for e in d["io_expanders"]:
+        # Not chained with &&: a chip that is missing must not stop the
+        # next one from being brought up.
+        a(f"    const bool ioOk{e['index'] or ''} = {e['member']}.begin(Wire);\n")
     if b["power_on"]:
         # The catalogue holds the snippet unindented; place it in the body here
         # so that a hand-written escape hatch does not have to know about
@@ -1471,9 +1585,10 @@ def emit_board(entry):
         a(f"                        /*mosi*/ {dd.get('mosi', -1)}, kSdSpiCs);\n")
     if b["backlight"]:
         a("    Backlight.begin();\n")
-    ret = "ok" if b["pmic"] in ("axp192", "axp2101", "core2", "m5pm1") else "true"
-    if b["io_expander"]:
-        ret = f"{ret} && ioOk"
+    ret = ("ok" if b["pmic"] in ("axp192", "axp2101", "core2", "m5pm1", "aw32001")
+           else "true")
+    for e in d["io_expanders"]:
+        ret = f"{ret} && ioOk{e['index'] or ''}"
     a(f"    return {ret};\n  }}\n\n")
 
     if b["power_hold"] is not None:
@@ -1728,8 +1843,8 @@ void setup()
     if d["has_battery"]:
         a("  Serial.println(Board.Power.getBatteryVoltage());\n")
         a("  Serial.println((int)Board.Power.getType());\n")
-    if d["io_expander"]:
-        a("  Serial.println(Board.Io.isPresent());\n")
+    for e in d["io_expanders"]:
+        a(f"  Serial.println(Board.{e['member']}.isPresent());\n")
     if d["has_backlight"]:
         a("  Board.Backlight.set(128);\n")
         a("  Serial.println(Board.Backlight.get());\n")
@@ -1934,11 +2049,31 @@ PI4IO_MODEL = ("""\
 // because the model starts every register at zero... so seed them.
 TinyM5Trace::useChip(0, 0x43, 0x01, 0xA0);
 TinyM5Trace::model().set(0x0F, 0xFF);
+// Every pin comes out of reset high impedance, which is what makes
+// enableInput / enableOutput visible in the trace below.
+TinyM5Trace::model().set(0x07, 0xFF);
 """)
 
 AW9523_MODEL = ("""\
 // The expander answers too, and identifies itself through 0x10.
 TinyM5Trace::addChip(0, 0x58, 0x10, 0x23);
+""")
+
+
+AW32001_MODEL = ("""\
+// The charger answers with its id, which is the same as its address.
+TinyM5Trace::useChip(0, 0x49, 0x0A, 0x49);
+// The gauge next to it reports millivolts little-endian in 0x08: 0x0FA0
+// is 4000, so the golden shows the assembly rather than a plausible
+// number.
+TinyM5Trace::addChip(0, 0x55, 0x08, 0xA0).set(0x09, 0x0F);
+""")
+
+
+PI4IO_PAIR_MODEL = ("""\
+// Two expanders on one bus, at the two addresses the chip can take.
+TinyM5Trace::addChip(0, 0x43, 0x01, 0xA0).set(0x07, 0xFF);
+TinyM5Trace::addChip(0, 0x44, 0x01, 0xA0).set(0x07, 0xFF);
 """)
 
 
@@ -1956,15 +2091,20 @@ def variants(b):
         return [("", AXP192_MODEL)]
     if d["pmic"] == "axp2101":
         model = AXP2101_MODEL
-        if d["io_expander"] == "aw9523":
+        if d["io_expanders"] and d["io_expanders"][0]["kind"] == "aw9523":
             model += AW9523_MODEL
         return [("", model)]
     if d["pmic"] == "m5pm1":
-        if d["io_expander"] == "m5ioe1":
+        if d["io_expanders"] and d["io_expanders"][0]["kind"] == "m5ioe1":
             return [("", M5PM1_MODEL + M5IOE1_MODEL)]
         return [("", M5PM1_MODEL)]
-    if d["pmic"] is None and d["io_expander"] == "pi4io":
+    if d["pmic"] is None and any(e["kind"] == "pi4io" for e in d["io_expanders"]):
         return [("", PI4IO_MODEL)]
+    if d["pmic"] == "aw32001":
+        model = AW32001_MODEL
+        if any(e == "pi4io" for e in (d["io_expander"] or ())):
+            model += PI4IO_PAIR_MODEL
+        return [("", model)]
     if d["pmic"] == "adc":
         pin = d["bat_adc"][0]
         return [("", f"// 2000 mV at the pin, so the golden shows what this board's\n"

@@ -100,7 +100,7 @@ PMIC の中と素の GPIO に分かれる**（StickC Plus2 は `35`）。
 
 | 列 | 例 | 備考 |
 | --- | --- | --- |
-| `pmic` | `adc` / `axp192` / `axp2101` / `m5pm1` / 省略 | `(axp192, axp2101)` と書くと**実行時に名乗らせる**（D5） |
+| `pmic` | `adc` / `axp192` / `axp2101` / `m5pm1` / `aw32001` / 省略 | `(axp192, axp2101)` と書くと**実行時に名乗らせる**（D5）。`aw32001` は**充電器と燃料計の 2 チップ**で 1 つの `Power`（D42） |
 | `bat_adc` | `(38, 2000)` | `pmic == adc` のときだけ。`(ピン, 分圧比 ×1000)` |
 | `rails` | `("dcdc1", "ldo2", "ldo3", "exten")` | `begin()` で投入するレール。**役割名で書き、レジスタ番号は書かない** |
 
@@ -113,6 +113,7 @@ PMIC の中と素の GPIO に分かれる**（StickC Plus2 は `35`）。
 | 列 | 例 | 使うボード |
 | --- | --- | --- |
 | `io_expander` | `"m5ioe1"` | StopWatch / PaperMono / ChainCaptain / CoreP4X / ToughC5 / CoreMatrix |
+| | `("pi4io", "pi4io")` | **2 個**。`Io` と `Io2` になる（D43）。NessoN1 / Tab5 |
 | | `"aw9523"` | CoreS3 / CoreS3SE / StackChan |
 | | `"pi4io"` | StampPLC / Tab5 / Tab5X / NessoN1 |
 | | 省略 | エキスパンダを持たない |

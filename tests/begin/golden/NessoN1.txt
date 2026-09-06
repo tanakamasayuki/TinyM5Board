@@ -1,0 +1,231 @@
+--- begin() ---
+i2c0 begin sda=10 scl=8 hz=100000
+i2c0 write 0x49 [0A] (no stop)
+i2c0 read  0x49 1 -> [49]
+i2c0 write 0x49 [05] (no stop)
+i2c0 read  0x49 1 -> [00]
+i2c0 write 0x49 [05 00]
+i2c0 write 0x43 [01] (no stop)
+i2c0 read  0x43 1 -> [A0]
+i2c0 write 0x44 [01] (no stop)
+i2c0 read  0x44 1 -> [A0]
+i2c0 write 0x43 [03] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [03 00]
+i2c0 write 0x43 [0D] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [0D 01]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [0B 01]
+i2c0 write 0x43 [07] (no stop)
+i2c0 read  0x43 1 -> [FF]
+i2c0 write 0x43 [07 FE]
+i2c0 write 0x43 [03] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [03 00]
+i2c0 write 0x43 [0D] (no stop)
+i2c0 read  0x43 1 -> [01]
+i2c0 write 0x43 [0D 03]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [01]
+i2c0 write 0x43 [0B 03]
+i2c0 write 0x43 [07] (no stop)
+i2c0 read  0x43 1 -> [FE]
+i2c0 write 0x43 [07 FC]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [03]
+i2c0 write 0x43 [0B 03]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [03]
+i2c0 write 0x43 [0B 03]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [03]
+i2c0 write 0x43 [0B 03]
+i2c0 write 0x43 [03] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [03 20]
+i2c0 write 0x43 [0D] (no stop)
+i2c0 read  0x43 1 -> [03]
+i2c0 write 0x43 [0D 03]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [03]
+i2c0 write 0x43 [0B 23]
+i2c0 write 0x43 [07] (no stop)
+i2c0 read  0x43 1 -> [FC]
+i2c0 write 0x43 [07 DC]
+i2c0 write 0x43 [05] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [05 00]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [23]
+i2c0 write 0x43 [0B 03]
+i2c0 write 0x43 [03] (no stop)
+i2c0 read  0x43 1 -> [20]
+i2c0 write 0x43 [03 60]
+i2c0 write 0x43 [0D] (no stop)
+i2c0 read  0x43 1 -> [03]
+i2c0 write 0x43 [0D 43]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [03]
+i2c0 write 0x43 [0B 43]
+i2c0 write 0x43 [07] (no stop)
+i2c0 read  0x43 1 -> [DC]
+i2c0 write 0x43 [07 9C]
+i2c0 write 0x43 [05] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [05 00]
+i2c0 write 0x43 [03] (no stop)
+i2c0 read  0x43 1 -> [60]
+i2c0 write 0x43 [03 E0]
+i2c0 write 0x43 [0D] (no stop)
+i2c0 read  0x43 1 -> [43]
+i2c0 write 0x43 [0D C3]
+i2c0 write 0x43 [0B] (no stop)
+i2c0 read  0x43 1 -> [43]
+i2c0 write 0x43 [0B C3]
+i2c0 write 0x43 [07] (no stop)
+i2c0 read  0x43 1 -> [9C]
+i2c0 write 0x43 [07 1C]
+i2c0 write 0x43 [05] (no stop)
+i2c0 read  0x43 1 -> [00]
+i2c0 write 0x43 [05 80]
+i2c0 write 0x43 [09 03]
+i2c0 write 0x43 [11 FC]
+i2c0 write 0x44 [03] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [03 01]
+i2c0 write 0x44 [0D] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [0D 00]
+i2c0 write 0x44 [0B] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [0B 01]
+i2c0 write 0x44 [07] (no stop)
+i2c0 read  0x44 1 -> [FF]
+i2c0 write 0x44 [07 FE]
+i2c0 write 0x44 [05] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [05 00]
+i2c0 write 0x44 [03] (no stop)
+i2c0 read  0x44 1 -> [01]
+i2c0 write 0x44 [03 03]
+i2c0 write 0x44 [0D] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [0D 00]
+i2c0 write 0x44 [0B] (no stop)
+i2c0 read  0x44 1 -> [01]
+i2c0 write 0x44 [0B 03]
+i2c0 write 0x44 [07] (no stop)
+i2c0 read  0x44 1 -> [FE]
+i2c0 write 0x44 [07 FC]
+i2c0 write 0x44 [05] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [05 00]
+i2c0 write 0x44 [03] (no stop)
+i2c0 read  0x44 1 -> [03]
+i2c0 write 0x44 [03 07]
+i2c0 write 0x44 [0D] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [0D 00]
+i2c0 write 0x44 [0B] (no stop)
+i2c0 read  0x44 1 -> [03]
+i2c0 write 0x44 [0B 07]
+i2c0 write 0x44 [07] (no stop)
+i2c0 read  0x44 1 -> [FC]
+i2c0 write 0x44 [07 F8]
+i2c0 write 0x44 [05] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [05 00]
+i2c0 write 0x44 [03] (no stop)
+i2c0 read  0x44 1 -> [07]
+i2c0 write 0x44 [03 47]
+i2c0 write 0x44 [0D] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [0D 00]
+i2c0 write 0x44 [0B] (no stop)
+i2c0 read  0x44 1 -> [07]
+i2c0 write 0x44 [0B 47]
+i2c0 write 0x44 [07] (no stop)
+i2c0 read  0x44 1 -> [F8]
+i2c0 write 0x44 [07 B8]
+i2c0 write 0x44 [05] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [05 00]
+i2c0 write 0x44 [03] (no stop)
+i2c0 read  0x44 1 -> [47]
+i2c0 write 0x44 [03 C7]
+i2c0 write 0x44 [0D] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [0D 80]
+i2c0 write 0x44 [0B] (no stop)
+i2c0 read  0x44 1 -> [47]
+i2c0 write 0x44 [0B C7]
+i2c0 write 0x44 [07] (no stop)
+i2c0 read  0x44 1 -> [B8]
+i2c0 write 0x44 [07 38]
+i2c0 write 0x44 [05] (no stop)
+i2c0 read  0x44 1 -> [00]
+i2c0 write 0x44 [05 80]
+i2c0 write 0x44 [0D] (no stop)
+i2c0 read  0x44 1 -> [80]
+i2c0 write 0x44 [0D 80]
+i2c0 write 0x44 [0B] (no stop)
+i2c0 read  0x44 1 -> [C7]
+i2c0 write 0x44 [0B CF]
+i2c0 write 0x44 [0D] (no stop)
+i2c0 read  0x44 1 -> [80]
+i2c0 write 0x44 [0D 80]
+i2c0 write 0x44 [0B] (no stop)
+i2c0 read  0x44 1 -> [CF]
+i2c0 write 0x44 [0B DF]
+i2c0 write 0x44 [0D] (no stop)
+i2c0 read  0x44 1 -> [80]
+i2c0 write 0x44 [0D 80]
+i2c0 write 0x44 [0B] (no stop)
+i2c0 read  0x44 1 -> [DF]
+i2c0 write 0x44 [0B FF]
+i2c0 write 0x44 [03] (no stop)
+i2c0 read  0x44 1 -> [C7]
+i2c0 write 0x44 [03 C7]
+i2c0 write 0x44 [07] (no stop)
+i2c0 read  0x44 1 -> [38]
+i2c0 write 0x44 [07 38]
+i2c0 write 0x44 [05] (no stop)
+i2c0 read  0x44 1 -> [80]
+i2c0 write 0x44 [05 82]
+i2c0 write 0x44 [05] (no stop)
+i2c0 read  0x44 1 -> [82]
+i2c0 write 0x44 [05 80]
+i2c0 write 0x44 [05] (no stop)
+i2c0 read  0x44 1 -> [80]
+i2c0 write 0x44 [05 82]
+i2c0 write 0x44 [03] (no stop)
+i2c0 read  0x44 1 -> [C7]
+i2c0 write 0x44 [03 C7]
+i2c0 write 0x44 [0D] (no stop)
+i2c0 read  0x44 1 -> [80]
+i2c0 write 0x44 [0D 80]
+i2c0 write 0x44 [0B] (no stop)
+i2c0 read  0x44 1 -> [FF]
+i2c0 write 0x44 [0B FF]
+i2c0 write 0x44 [07] (no stop)
+i2c0 read  0x44 1 -> [38]
+i2c0 write 0x44 [07 38]
+i2c0 write 0x44 [05] (no stop)
+i2c0 read  0x44 1 -> [82]
+i2c0 write 0x44 [05 C2]
+--- board ---
+name=ArduinoNessoN1 id=23
+pins i2c=10/8 ext=10/8 led=-1/0 hold=-1
+has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=1
+--- display ---
+bus=spi mosi=21 miso=22 io2=-1 io3=-1 sclk=20 dc=16 cs=17 rst=-1 3wire=1 sdcs=-1 busy=-1
+freq write=40000000 read=16000000
+panel 135x240 offset=52,40 rotation=0 invert=1
+--- battery ---
+i2c0 write 0x55 [08] (no stop)
+i2c0 read  0x55 2 -> [A0 0F]
+i2c0 write 0x55 [08] (no stop)
+i2c0 read  0x55 2 -> [A0 0F]
+mV=4000 level=87

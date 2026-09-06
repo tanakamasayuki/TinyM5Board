@@ -55,6 +55,8 @@
 #include "TinyM5BoardCardputer.h"
 #elif defined(TINYM5_VAMETER)
 #include "TinyM5BoardVAMeter.h"
+#elif defined(TINYM5_NESSON1)
+#include "TinyM5BoardNessoN1.h"
 #elif defined(TINYM5_DIAL)
 #include "TinyM5BoardDial.h"
 #elif defined(TINYM5_DINMETER)

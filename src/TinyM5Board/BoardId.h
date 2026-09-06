@@ -26,6 +26,7 @@ enum class BoardId : uint16_t {
   StickCPlus2 = 17,
   CoreS3SE = 17,
   StampPLC = 21,
+  NessoN1 = 23,
   StickS3 = 26,
   StackChan = 27,
   PaperMono = 29,

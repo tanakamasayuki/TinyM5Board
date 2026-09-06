@@ -18,6 +18,9 @@ void setup()
   // because the model starts every register at zero... so seed them.
   TinyM5Trace::useChip(0, 0x43, 0x01, 0xA0);
   TinyM5Trace::model().set(0x0F, 0xFF);
+  // Every pin comes out of reset high impedance, which is what makes
+  // enableInput / enableOutput visible in the trace below.
+  TinyM5Trace::model().set(0x07, 0xFF);
 
   Board.begin();
 

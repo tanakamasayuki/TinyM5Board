@@ -38,6 +38,8 @@ enum class Pmic : uint8_t {
   Axp192,
   Axp2101,
   M5pm1,
+  /// A charger with no gauge of its own, paired with one beside it.
+  Aw32001,
 };
 
 /// Charge state. Same shape as M5Unified's `is_charging_t`.

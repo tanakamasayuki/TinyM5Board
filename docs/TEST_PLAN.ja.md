@@ -66,7 +66,7 @@ FQBN は**そのボードの機種名ではなく SoC の Dev Module**（`esp32:
 `-D` でボードを注入する形は取らなかった。マクロはスケッチに書いてある。
 生成するので手間は同じで、**ビルドプロパティ経由の引用符に依存しない。**
 
-36 機種 + 入口 2 本で**約 3 分**。SoC は esp32 / S3 / C3 / C6 / H2 / P4 の 6 種類で、
+37 機種 + 入口 2 本で**約 3 分**。SoC は esp32 / S3 / C3 / C6 / H2 / P4 の 6 種類で、
 **RISC-V のツールチェーンもここで通る。**
 
 ## 3. Tier 1 —— 初期化列のゴールデン（ホスト実行）
@@ -328,7 +328,7 @@ run: uv run pytest "begin/${{ matrix.family }}" --profile host
 
 ```sh
 uv run pytest begin/Stick --profile host    # 4 機種、約 30 秒
-uv run pytest begin --profile host          # 全部、37 スケッチで約 6 分
+uv run pytest begin --profile host          # 全部、38 スケッチで約 6 分
 ```
 
 **必要な理由**: `begin` のテストは 1 本ごとにスケッチをビルドして実行するので、
