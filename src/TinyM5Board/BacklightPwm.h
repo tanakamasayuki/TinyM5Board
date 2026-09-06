@@ -44,6 +44,10 @@ class TinyM5BoardBacklightPwm {
   }
 
   uint8_t get() const { return _brightness; }
+
+  /// Every backlight answers this, so a sketch can ask without knowing
+  /// what is behind it. Only the ones wired to a plain switch say no.
+  static constexpr bool dimmable() { return true; }
   int8_t getPin() const { return _pin; }
 
   /// The duty for a brightness, exposed so a test can check the curve

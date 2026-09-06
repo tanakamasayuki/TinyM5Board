@@ -8,6 +8,7 @@ uv sync
 uv run pytest --profile host          # everything
 uv run pytest unit --profile host     # the board independent classes, ~16s
 uv run pytest tier0                   # every header, real toolchain, ~3 min
+uv run pytest tier2                   # the examples, as a reader builds them, ~30s
 uv run pytest begin --profile host    # the bring-up goldens, ~4-5 min
 ```
 
@@ -79,6 +80,16 @@ three-line test.
 Hand written, not generated - there is no board in them - and about eight
 seconds each, so this is what to run while working on anything under
 `src/TinyM5Board/`.
+
+## `tier2/` — the examples
+
+The examples are the documentation: one per feature, with the board as a
+single line to change. That only holds if they build, and tier0 does not
+cover them - it builds a generated sketch per board, not the sketch a
+reader copies.
+
+Each example pins its own board and core in its `sketch.yaml`, so this
+tier just runs the build. About thirty seconds for the four of them.
 
 ## `begin/` — the bring-up golden
 

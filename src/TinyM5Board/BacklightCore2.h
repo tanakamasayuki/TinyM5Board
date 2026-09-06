@@ -25,6 +25,10 @@ class TinyM5BoardBacklightCore2 {
 
   uint8_t get() const { return _brightness; }
 
+  /// Every backlight answers this, so a sketch can ask without knowing
+  /// what is behind it. Only the ones wired to a plain switch say no.
+  static constexpr bool dimmable() { return true; }
+
  private:
   TinyM5BoardPowerCore2 &_power;
   uint8_t _brightness = 0;

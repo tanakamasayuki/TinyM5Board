@@ -20,8 +20,9 @@ C3 / C6 / H2 の 5 種類。**
 | 表示 | `TinyM5::Display`。3 線式・PMIC 越しリセット・EPD の BUSY・**QSPI の 4 本**の表現あり |
 | `tests/begin/` | **35 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
 | `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（34 機種 + 入口 2 本 / 5 種類の SoC） |
+| `tests/tier2/` | **サンプルを実機コアで建てる**（D20 の裏取り）。4 本 / 約 28 秒 |
 | `tests/unit/` | **ボード非依存のクラス**の検査。Button の状態機械と SD のモード落とし（39 + 13 検査 / 約 16 秒） |
-| `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` は別ジョブ |
+| `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` / `examples` は別ジョブ |
 | I2C | 内部 / 外部の 2 本。**内部を持たない module では Grove が `Wire`**（D37） |
 | SD | **パネルとバスを共有する 6 機種でモードを落とす**（D38）。バスは `SPI.end()` で返す |
 | `keywords.txt` | **あり。** `gen_boards.py` が**ヘッダを読み直して**生成する |
@@ -76,7 +77,7 @@ CI では最長の群の時間で済み、ローカルは `pytest begin/Stick` �
 （4 機種で約 30 秒 / 実測）。
 
 `tests/tier0` は 36 本ビルドして**約 3 分**、`tests/unit` は 2 本で**約 16 秒**。
-**全部で 8 分 22 秒**（34 機種 / ローカル実測。負荷で 1〜2 分は振れる）。
+**全部で 11 分 8 秒**（34 機種 + サンプル 4 本 / ローカル実測。負荷で 2〜3 分は振れる）。
 どちらも機種数に線形だが、実行が無い分だけ安い。
 ボード非依存の変更は `unit` だけ回せばよい。
 
@@ -306,7 +307,7 @@ cfg.pin_cs  = GPIO_NUM_44;
 | `keywords.txt` | **あり** | `gen_boards.py` が生成。**ヘッダを読み直す**ので手で並べる箇所が無い |
 | `.github/workflows/tests.yml` | **あり** | `catalogue` → 群ごとの `begin` matrix、それと `unit` |
 | `src/` 一式 | **あり** | ボードヘッダは生成物 |
-| `examples/` | **あり** | `Hello` のみ。機種が揃ってから増やす |
+| `examples/` | **あり** | `Hello` / `Buttons` / `Battery` / `Backlight`。**機能軸**（D20）。Tier 2 が建てる |
 | `tests/` 一式 | **あり** | `tier0/` `begin/`（生成）と `unit/`（手書き） |
 | `README.md` / `README.ja.md` | **無い** | 実機で動いてから書く |
 

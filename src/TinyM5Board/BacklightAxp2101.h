@@ -41,6 +41,10 @@ class TinyM5BoardBacklightAxp2101 {
 
   uint8_t get() const { return _brightness; }
 
+  /// Every backlight answers this, so a sketch can ask without knowing
+  /// what is behind it. Only the ones wired to a plain switch say no.
+  static constexpr bool dimmable() { return true; }
+
   /// The rail setting for a brightness, so the curve is checkable without
   /// a chip to talk to.
   static constexpr uint8_t level(uint8_t brightness)

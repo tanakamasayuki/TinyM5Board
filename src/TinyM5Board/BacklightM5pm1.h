@@ -50,6 +50,10 @@ class TinyM5BoardBacklightM5pm1 {
 
   uint8_t get() const { return _brightness; }
 
+  /// Every backlight answers this, so a sketch can ask without knowing
+  /// what is behind it. Only the ones wired to a plain switch say no.
+  static constexpr bool dimmable() { return true; }
+
   /// The 12-bit duty for a brightness, exposed so the curve can be
   /// checked without a chip to talk to. 255 lands on 4064 rather than
   /// 4095 - the same arithmetic M5GFX does.

@@ -83,6 +83,31 @@ jobs:
         working-directory: tests
         run: uv run pytest tier0 -v
 
+  # Tier 2: the examples, built as a reader would build them. Same core
+  # as tier0 and only four sketches, so it rides along as its own quick
+  # job rather than waiting on the catalogue gate - nothing here is
+  # generated.
+  examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install test dependencies
+        working-directory: tests
+        run: uv sync
+
+      - name: Build every example
+        working-directory: tests
+        run: uv run pytest tier2 -v
+
   # One job per board family. Each begin() test builds and runs its own
   # sketch, so the wall clock grows with the catalogue; splitting on the
   # family keeps it flat and makes a failure read as "Stick broke"

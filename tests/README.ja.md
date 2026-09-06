@@ -12,6 +12,7 @@ uv sync
 uv run pytest --profile host          # 全部
 uv run pytest unit --profile host     # ボードに依らないクラス。約 16 秒
 uv run pytest tier0                   # 全機種のヘッダを実物のコアで。約 3 分
+uv run pytest tier2                   # サンプルを読んだ人と同じように建てる。約 30 秒
 uv run pytest begin --profile host    # 立ち上げのゴールデン。約 4〜5 分
 ```
 
@@ -74,6 +75,15 @@ uv run pytest tier0 -k StickC        # 1 機種だけ
 
 生成物ではなく手書き（ボードが出てこないため）。1 本あたり約 8 秒なので、
 `src/TinyM5Board/` を触っている間はこれだけ回せばよい。
+
+## `tier2/` — サンプル
+
+サンプルは実質のドキュメント（機能ごとに 1 本、ボードは 1 行差し替え）。
+**読んだ人がそのまま建てられること**が前提なので、それを見る。
+tier0 が建てるのは生成したスケッチで、**利用者が写すスケッチではない。**
+
+各サンプルが自分の `sketch.yaml` にボードとコアを持っているので、
+ここは建てるだけ。4 本で約 30 秒。
 
 ## `begin/` — 初期化列のゴールデン
 
