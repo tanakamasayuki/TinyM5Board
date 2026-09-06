@@ -6,8 +6,8 @@
 // rather than guessing - define TINYM5_CORE2_PMIC_AXP2101 (or
 // _AXP192) to skip the question and drop the other driver.
 // Its A/B/C are touch zones, not GPIOs, so only the power key is
-// here. The SD card shares the LCD's SPI bus and is not yet taken
-// out of SD mode - see docs/DEVELOPMENT_PLAN.ja.md.
+// here. The SD card shares the LCD's SPI bus, so begin() puts the
+// card into SPI mode before anything reads the panel.
 // The panel is an ILI9342C or an ILI9342E depending on the unit,
 // which is read from the touch controller's firmware id - a
 // graphics library's job, so no panel type is reported here.

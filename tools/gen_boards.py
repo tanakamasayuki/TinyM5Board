@@ -550,8 +550,8 @@ digitalWrite(2, LOW);
              "the chip's IO4 resets it and LDO3 dims it, so begin() has to talk\n"
              "to the AXP192 before there is anything to draw on.\n"
              "Its buttons are touch zones, not GPIOs, so only the power key is\n"
-             "here. The SD card shares the LCD's SPI bus and is not yet taken\n"
-             "out of SD mode - see docs/DEVELOPMENT_PLAN.ja.md.",
+             "here. The SD card shares the LCD's SPI bus, so begin() puts the\n"
+             "card into SPI mode before anything reads the panel.",
         i2c_int=(21, 22),
         i2c_ext=(32, 33),
         buttons={"Pwr": "pek"},
@@ -586,8 +586,8 @@ Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
              "rather than guessing - define TINYM5_CORE2_PMIC_AXP2101 (or\n"
              "_AXP192) to skip the question and drop the other driver.\n"
              "Its A/B/C are touch zones, not GPIOs, so only the power key is\n"
-             "here. The SD card shares the LCD's SPI bus and is not yet taken\n"
-             "out of SD mode - see docs/DEVELOPMENT_PLAN.ja.md.\n"
+             "here. The SD card shares the LCD's SPI bus, so begin() puts the\n"
+             "card into SPI mode before anything reads the panel.\n"
              "The panel is an ILI9342C or an ILI9342E depending on the unit,\n"
              "which is read from the touch controller's firmware id - a\n"
              "graphics library's job, so no panel type is reported here.",
@@ -681,8 +681,8 @@ digitalWrite(21, LOW);
              "library driving this screen has to re-point that pin on every CS\n"
              "transition; this library reports both roles and does not perform\n"
              "that trick - it belongs inside the SPI transaction layer.\n"
-             "Its A/B/C are touch zones, not GPIOs. The SD card shares the\n"
-             "LCD's SPI bus and is not yet taken out of SD mode.",
+             "Its A/B/C are touch zones, not GPIOs. Its card shares the panel's\n"
+             "SPI bus, so begin() quietens it first.",
         i2c_int=(12, 11),
         i2c_ext=(2, 1),
         buttons={"Pwr": "pek"},
@@ -1063,8 +1063,8 @@ delay(150);
              "transaction and Board.BtnA is rate limited accordingly.\n"
              "The backlight is the same expander's P7 and is a plain switch -\n"
              "on or off, nothing between. Board.Backlight.dimmable() says so.\n"
-             "The SD card shares the LCD's SPI bus and is not yet taken out of\n"
-             "SD mode.",
+             "Its card shares the LCD's SPI bus, so begin() puts the card into\n"
+             "SPI mode before anything reads the panel.",
         i2c_int=(13, 15),
         i2c_ext=(2, 1),
         rgb_led=(21, 1),
