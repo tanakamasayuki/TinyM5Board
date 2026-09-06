@@ -1804,6 +1804,67 @@ def emit_entry():
     return "".join(o)
 
 
+# --- the README board table ------------------------------------------------
+#
+# The prose in the READMEs is written by hand; the table of boards is not.
+# A hand-kept list of forty boards is a list that is wrong by the third
+# one, and the table is the first thing a reader looks at to find their
+# own board.
+#
+# The tables sit between markers so that the rest of each file is left
+# alone. Same shape as the panel list in TinyGFX's gen_panels.py.
+
+TABLE_BEGIN = "<!-- BEGIN BOARD TABLE -->"
+TABLE_END = "<!-- END BOARD TABLE -->"
+
+TABLE_HEAD = {
+    "en": ("| Board | Include | Screen | Battery | Buttons |\n"
+           "| --- | --- | --- | --- | --- |\n"),
+    "ja": ("| ボード | include | 画面 | 電池 | ボタン |\n"
+           "| --- | --- | --- | --- | --- |\n"),
+}
+
+TABLE_YES = {"en": ("no", "yes"), "ja": ("—", "あり")}
+
+
+def board_table(lang):
+    """One row per board, grouped by family.
+
+    Screen, battery and buttons rather than chips: someone looking for
+    their own board is holding it, not reading its schematic.
+    """
+    out = []
+    for family in sorted({b["family"] for b in BOARDS}):
+        out.append(f"\n**{family}**\n\n")
+        out.append(TABLE_HEAD[lang])
+        for b in BOARDS:
+            if b["family"] != family:
+                continue
+            d = derive(b)
+            btns = ", ".join(button_names_of(d)) or TABLE_YES[lang][0]
+            out.append(f"| {b['name']} | `<TinyM5Board{b['id']}.h>` "
+                       f"| {TABLE_YES[lang][d['has_display']]} "
+                       f"| {TABLE_YES[lang][d['has_battery']]} "
+                       f"| {btns} |\n")
+    return "".join(out)
+
+
+def button_names_of(d):
+    """What a user would call the buttons on this board."""
+    return [f"Btn{n}" for n in d["buttons"]]
+
+
+def patch_table(path, lang):
+    """Replace what is between the markers, leave everything else."""
+    text = path.read_text(encoding="utf-8")
+    start = text.find(TABLE_BEGIN)
+    end = text.find(TABLE_END)
+    if start < 0 or end < 0:
+        raise SystemExit(f"{path.name}: no board table markers")
+    head = text[:start + len(TABLE_BEGIN)]
+    return head + "\n" + board_table(lang) + "\n" + text[end:]
+
+
 # --- tier 0 ----------------------------------------------------------------
 #
 # The begin() goldens run on the host core, which is not the compiler that
@@ -2246,6 +2307,10 @@ def outputs():
     # Reads the board headers back, so it has to be built from the same
     # text they are written from rather than from what is on disk.
     files[REPO / "keywords.txt"] = emit_keywords(boards)
+    for name, lang in (("README.md", "en"), ("README.ja.md", "ja")):
+        readme = REPO / name
+        if readme.exists():
+            files[readme] = patch_table(readme, lang)
     for b in BOARDS:
         soc = b["soc"]
         if soc not in TIER0_FQBN:

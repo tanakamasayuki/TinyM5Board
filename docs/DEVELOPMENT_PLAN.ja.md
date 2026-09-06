@@ -26,7 +26,7 @@ C3 / **C5** / C6 / H2 / P4 の 7 種類。**
 | I2C | 内部 / 外部の 2 本。**内部を持たない module では Grove が `Wire`**（D37） |
 | SD | **パネルとバスを共有する 6 機種でモードを落とす**（D38）。バスは `SPI.end()` で返す |
 | `keywords.txt` | **あり。** `gen_boards.py` が**ヘッダを読み直して**生成する |
-| 利用者向け README | **無い。** 機種が揃ってから |
+| 利用者向け文書 | **一式あり。** [README](../README.ja.md) / [GUIDE](GUIDE.ja.md) / [API](API.ja.md) / [examples/](../examples/README.ja.md)、**すべて日英** |
 
 ### 1.1 実測（arduino-esp32 3.3.11 / 同一スケッチ）
 
@@ -368,7 +368,9 @@ cfg.pin_cs  = GPIO_NUM_44;
 | `src/` 一式 | **あり** | ボードヘッダは生成物 |
 | `examples/` | **あり** | `Hello` / `Buttons` / `Battery` / `Backlight`。**機能軸**（D20）。Tier 2 が建てる |
 | `tests/` 一式 | **あり** | `tier0/` `begin/`（生成）と `unit/`（手書き） |
-| `README.md` / `README.ja.md` | **無い** | 実機で動いてから書く |
+| `README.md` / `README.ja.md` | **あり** | ボード表は `gen_boards.py` がマーカ間に生成する |
+| `docs/GUIDE.*` / `docs/API.*` | **あり** | 初心者向けと全 API。日英 |
+| `examples/README.*` | **あり** | 機能軸のサンプル 4 本の案内。日英 |
 
 ## 4. リリース方針
 

@@ -1,16 +1,22 @@
 # ドキュメント案内
 
-> **この下の文書はすべて日本語のみ。** 開発中の内部記録であって、
-> 利用者が読むものではないため（[DECISIONS.ja.md](DECISIONS.ja.md) D23）。
-> 利用者向けの文書は英語と日本語の両方を用意する。
+TinyM5Board の文書は **2 種類**ある。
 
-TinyM5Board の設計文書。**まだ実装は無い。** 確定していない項目には「**暫定**」と書いてある。
+| | 言語 | どこ |
+| --- | --- | --- |
+| **利用者向け** | **日英** | [GUIDE](GUIDE.ja.md) / [API](API.ja.md) / [../README.ja.md](../README.ja.md) / [../examples/](../examples/README.ja.md) |
+| **内部の記録** | **日本語のみ** | この下（[DECISIONS.ja.md](DECISIONS.ja.md) D23） |
+
+> **使う人はここを読まなくてよい。** はじめてなら [GUIDE.ja.md](GUIDE.ja.md)、
+> 全部の API は [API.ja.md](API.ja.md)。
+> 下にあるのは**なぜそう作ったか**の記録で、ボードを足す人と、
+> 設計判断を蒸し返す前に確認したい人のためのもの。
 
 **言語方針は 3 段。正本は日本語版。** 兄弟プロジェクト（TinyGFX / PaperCanvas / BarcodeKit）と同じ。
 
 | 区分 | 言語 | 対象 |
 | --- | --- | --- |
-| 使う人が読むもの | 日英 | `../README.ja.md`、`API.ja.md`、`../examples/README.ja.md` |
+| 使う人が読むもの | 日英 | [../README.ja.md](../README.ja.md)、[GUIDE.ja.md](GUIDE.ja.md)、[API.ja.md](API.ja.md)、[../examples/README.ja.md](../examples/README.ja.md) |
 | 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)、[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)、[DECISIONS.ja.md](DECISIONS.ja.md)、[BOARD_CATALOG.ja.md](BOARD_CATALOG.ja.md)、[TEST_PLAN.ja.md](TEST_PLAN.ja.md)、[research/](research/) |
 | **コード中のコメント** | **英語のみ** | `../src/`、`../examples/`、`../tests/`、`../tools/` |
 
@@ -18,6 +24,8 @@ TinyM5Board の設計文書。**まだ実装は無い。** 確定していない
 
 | やりたいこと | 読む文書 |
 | --- | --- |
+| **使う**（はじめて） | **[GUIDE.ja.md](GUIDE.ja.md)** |
+| **使う**（全部の API） | **[API.ja.md](API.ja.md)** |
 | **何を作るライブラリで、どこまでが責務なのか知る** | **[REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)** |
 | **API の形と内部構造を知る** | **[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)** |
 | **なぜそう設計したのかを知る／論点を潰す** | **[DECISIONS.ja.md](DECISIONS.ja.md)** |
