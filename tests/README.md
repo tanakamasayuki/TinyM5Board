@@ -22,7 +22,7 @@ axis and what you select on locally:
 
 ```sh
 uv run pytest begin/Stick --profile host    # 4 boards, about 30 seconds
-uv run pytest begin --profile host          # 30 sketches, about 5 minutes
+uv run pytest begin --profile host          # 31 sketches, about 5 minutes
 ```
 
 Each one builds and runs its own sketch, so the wall clock grows with the

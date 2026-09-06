@@ -144,8 +144,16 @@ Ch3=IO11 / Ch4=IO10）なので、チャネルとピンの両方を書くのは�
 
 | 例 |
 | --- |
-| `bus=spi2, mosi=15, miso=14, sclk=13, dc=23, cs=5, rst=18,`<br>`freq_write=27M, freq_read=14M, w=80, h=160, ox=26, oy=1,`<br>`rotation=2, invert=True, three_wire=True` |
+| `bus=spi, mosi=15, miso=14, sclk=13, dc=23, cs=5, rst=18,`<br>`freq_write=27M, freq_read=14M, w=80, h=160, ox=26, oy=1,`<br>`rotation=2, invert=True, three_wire=True` |
+| `bus=qspi, mosi=41, miso=42, io2=46, io3=45, sclk=40, dc=-1, cs=39, ...` |
 | 省略（画面なしボード） |
+
+`bus` は**線の張り方**（`spi` / `qspi`）であって、どの SPI ペリフェラルに
+載せるかではない。ESP32 は GPIO マトリクスでどのピンもどのホストにも回せるので、
+**ホストの選択は GFX の判断**（D40）。
+
+`qspi` では `mosi` / `miso` が **io0 / io1** になり、`io2` / `io3` が要る。
+D/C ピンは無い（`dc=-1`）。片方だけ書くと生成時に落ちる。
 
 `three_wire` は「読み書きが 1 本のデータ線を共有する」配線。
 Stick 系はこれで、4 線前提のバス設定では**読み戻しができない**。

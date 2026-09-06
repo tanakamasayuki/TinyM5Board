@@ -98,8 +98,10 @@ class TinyM5BoardDinMeter {
   static constexpr TinyM5::Display display()
   {
     return TinyM5::Display{
+        /*bus*/ TinyM5::DisplayBus::Spi,
         /*mosi*/ 5, /*miso*/ -1, /*sclk*/ 6,
         /*dc*/ 4, /*cs*/ 7,
+        /*io2*/ -1, /*io3*/ -1,
         /*rst*/ -1,  // begin() has already pulsed it
         /*busy*/ -1,
         /*freqWrite*/ 40000000, /*freqRead*/ 16000000,

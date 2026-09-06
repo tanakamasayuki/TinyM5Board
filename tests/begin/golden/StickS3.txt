@@ -30,7 +30,7 @@ name=M5StickS3 id=26
 pins i2c=47/48 ext=9/10 led=-1/0 hold=-1
 has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=0
 --- display ---
-spi mosi=39 miso=-1 sclk=40 dc=45 cs=41 rst=-1 3wire=1 sdcs=-1 busy=-1
+bus=spi mosi=39 miso=-1 io2=-1 io3=-1 sclk=40 dc=45 cs=41 rst=-1 3wire=1 sdcs=-1 busy=-1
 freq write=40000000 read=16000000
 panel 135x240 offset=52,40 rotation=0 invert=1
 --- battery ---

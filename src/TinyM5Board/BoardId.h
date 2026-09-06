@@ -24,6 +24,7 @@ enum class BoardId : uint16_t {
   StickS3 = 26,
   StackChan = 27,
   PaperMono = 29,
+  StopWatch = 30,
   ChainCaptain = 32,
   AtomLite = 128,
   AtomU = 130,

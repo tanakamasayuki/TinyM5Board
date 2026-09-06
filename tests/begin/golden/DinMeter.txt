@@ -16,7 +16,7 @@ name=M5DinMeter id=13
 pins i2c=11/12 ext=13/15 led=21/1 hold=46
 has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=0
 --- display ---
-spi mosi=5 miso=-1 sclk=6 dc=4 cs=7 rst=-1 3wire=1 sdcs=-1 busy=-1
+bus=spi mosi=5 miso=-1 io2=-1 io3=-1 sclk=6 dc=4 cs=7 rst=-1 3wire=1 sdcs=-1 busy=-1
 freq write=40000000 read=16000000
 panel 135x240 offset=52,40 rotation=2 invert=1
 --- battery ---

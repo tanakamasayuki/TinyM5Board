@@ -105,8 +105,10 @@ class TinyM5BoardStickC {
   static constexpr TinyM5::Display display()
   {
     return TinyM5::Display{
+        /*bus*/ TinyM5::DisplayBus::Spi,
         /*mosi*/ 15, /*miso*/ 14, /*sclk*/ 13,
         /*dc*/ 23, /*cs*/ 5,
+        /*io2*/ -1, /*io3*/ -1,
         /*rst*/ -1,  // begin() has already pulsed it
         /*busy*/ -1,
         /*freqWrite*/ 27000000, /*freqRead*/ 14000000,

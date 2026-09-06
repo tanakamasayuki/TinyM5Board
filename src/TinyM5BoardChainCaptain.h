@@ -125,8 +125,10 @@ class TinyM5BoardChainCaptain {
   static constexpr TinyM5::Display display()
   {
     return TinyM5::Display{
+        /*bus*/ TinyM5::DisplayBus::Spi,
         /*mosi*/ 16, /*miso*/ -1, /*sclk*/ 15,
         /*dc*/ 46, /*cs*/ 45,
+        /*io2*/ -1, /*io3*/ -1,
         /*rst*/ -1,  // begin() has already pulsed it
         /*busy*/ -1,
         /*freqWrite*/ 40000000, /*freqRead*/ 16000000,

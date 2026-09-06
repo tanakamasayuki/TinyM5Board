@@ -302,7 +302,7 @@ digitalWrite(2, LOW);
         buttons={"A": 42, "B": 0},
         pmic=None,
         backlight=("pwm", 9, 44100, 0),
-        display=dict(bus="spi2", mosi=5, miso=-1, sclk=6, dc=4, cs=7, rst=8,
+        display=dict(bus="spi", mosi=5, miso=-1, sclk=6, dc=4, cs=7, rst=8,
                      freq_write=80000000, freq_read=16000000,
                      w=240, h=240, ox=0, oy=0, rotation=0, invert=True,
                      three_wire=True),
@@ -327,7 +327,7 @@ digitalWrite(2, LOW);
         pmic="adc",
         bat_adc=(10, 2000),
         backlight=("pwm", 9, 256, 16),
-        display=dict(bus="spi2", mosi=5, miso=-1, sclk=6, dc=4, cs=7, rst=8,
+        display=dict(bus="spi", mosi=5, miso=-1, sclk=6, dc=4, cs=7, rst=8,
                      freq_write=40000000, freq_read=16000000,
                      w=135, h=240, ox=52, oy=40, rotation=2, invert=True,
                      three_wire=True),
@@ -391,7 +391,7 @@ digitalWrite(2, LOW);
         pmic="adc",
         bat_adc=(38, 2000),
         backlight=("pwm", 27, 256, 40),
-        display=dict(bus="spi2", mosi=15, miso=-1, sclk=13, dc=14, cs=5, rst=12,
+        display=dict(bus="spi", mosi=15, miso=-1, sclk=13, dc=14, cs=5, rst=12,
                      freq_write=40000000, freq_read=15000000,
                      w=135, h=240, ox=52, oy=40, invert=True),
         power_on="",
@@ -415,7 +415,7 @@ digitalWrite(2, LOW);
         pmic="axp192",
         rails=("dcdc1", "ldo2", "ldo3", "exten"),
         backlight=("axp192_ldo2",),
-        display=dict(bus="spi2", mosi=15, miso=14, sclk=13, dc=23, cs=5, rst=18,
+        display=dict(bus="spi", mosi=15, miso=14, sclk=13, dc=23, cs=5, rst=18,
                      freq_write=27000000, freq_read=14000000,
                      w=80, h=160, ox=26, oy=1, rotation=2, invert=True,
                      three_wire=True),
@@ -435,7 +435,7 @@ digitalWrite(2, LOW);
         pmic="axp192",
         rails=("dcdc1", "ldo2", "ldo3", "exten"),
         backlight=("axp192_ldo2",),
-        display=dict(bus="spi2", mosi=15, miso=14, sclk=13, dc=23, cs=5, rst=18,
+        display=dict(bus="spi", mosi=15, miso=14, sclk=13, dc=23, cs=5, rst=18,
                      freq_write=40000000, freq_read=15000000,
                      w=135, h=240, ox=52, oy=40, invert=True,
                      three_wire=True),
@@ -456,7 +456,7 @@ digitalWrite(2, LOW);
         pmic="axp192",
         rails=("ldo2",),
         backlight=("axp192_ldo3",),
-        display=dict(bus="spi2", mosi=23, miso=-1, sclk=18, dc=19, cs=5, rst=15,
+        display=dict(bus="spi", mosi=23, miso=-1, sclk=18, dc=19, cs=5, rst=15,
                      freq_write=40000000, freq_read=15000000,
                      w=135, h=240, ox=52, oy=40, rotation=1, invert=True,
                      three_wire=True),
@@ -480,7 +480,7 @@ digitalWrite(2, LOW);
         rails=("ldo2",),
         rail_mv=dict(ldo2=3300),  # LCD power
         backlight=("axp192_ldo3",),
-        display=dict(bus="spi2", mosi=23, miso=38, sclk=18, dc=15, cs=5, rst=-1,
+        display=dict(bus="spi", mosi=23, miso=38, sclk=18, dc=15, cs=5, rst=-1,
                      freq_write=40000000, freq_read=16000000,
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
@@ -518,7 +518,7 @@ Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
         buttons={"Pwr": "pek"},
         pmic="core2",
         backlight=("core2",),
-        display=dict(bus="spi2", mosi=23, miso=38, sclk=18, dc=15, cs=5, rst=-1,
+        display=dict(bus="spi", mosi=23, miso=38, sclk=18, dc=15, cs=5, rst=-1,
                      freq_write=40000000, freq_read=16000000,
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
@@ -540,7 +540,7 @@ Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
         buttons={"A": 11, "B": 12, "Pwr": "pek"},
         pmic="m5pm1",
         backlight=("pwm", 38, 256, 16),
-        display=dict(bus="spi3", mosi=39, miso=-1, sclk=40, dc=45, cs=41, rst=21,
+        display=dict(bus="spi", mosi=39, miso=-1, sclk=40, dc=45, cs=41, rst=21,
                      freq_write=40000000, freq_read=16000000,
                      w=135, h=240, ox=52, oy=40, invert=True,
                      three_wire=True),
@@ -572,7 +572,7 @@ delay(100);
         pmic="m5pm1",
         io_expander="m5ioe1",
         backlight=("m5ioe1_pwm", "Ch3", "Io11", 1000),
-        display=dict(bus="spi2", mosi=16, miso=-1, sclk=15, dc=46, cs=45, rst=-1,
+        display=dict(bus="spi", mosi=16, miso=-1, sclk=15, dc=46, cs=45, rst=-1,
                      freq_write=40000000, freq_read=16000000,
                      w=240, h=240, ox=0, oy=0, rotation=2, invert=True,
                      three_wire=True),
@@ -610,7 +610,7 @@ digitalWrite(21, LOW);
         pmic="axp2101",
         io_expander="aw9523",
         backlight=("axp2101_dldo1",),
-        display=dict(bus="spi2", mosi=37, miso=35, sclk=36, dc=35, cs=3, rst=-1,
+        display=dict(bus="spi", mosi=37, miso=35, sclk=36, dc=35, cs=3, rst=-1,
                      freq_write=40000000, freq_read=16000000,
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
@@ -636,7 +636,7 @@ digitalWrite(21, LOW);
         pmic="axp2101",
         io_expander="aw9523",
         backlight=("axp2101_dldo1",),
-        display=dict(bus="spi2", mosi=37, miso=35, sclk=36, dc=35, cs=3, rst=-1,
+        display=dict(bus="spi", mosi=37, miso=35, sclk=36, dc=35, cs=3, rst=-1,
                      freq_write=40000000, freq_read=16000000,
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
@@ -661,12 +661,76 @@ digitalWrite(21, LOW);
         pmic="axp2101",
         io_expander="aw9523",
         backlight=("axp2101_dldo1",),
-        display=dict(bus="spi2", mosi=37, miso=35, sclk=36, dc=35, cs=3, rst=-1,
+        display=dict(bus="spi", mosi=37, miso=35, sclk=36, dc=35, cs=3, rst=-1,
                      freq_write=40000000, freq_read=16000000,
                      w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
                      three_wire=True),
         power_on=CORE_S3_POWER_ON,
         sd_spi_cs=4,
+    ),
+    dict(
+        id="StopWatch",
+        name="M5StopWatch",
+        board_id=30,
+        family="Other",
+        soc="esp32s3",
+        note="A round AMOLED on four data lines. This is the first QSPI panel\n"
+             "here, and the reason TinyM5::Display carries a bus kind at all:\n"
+             "mosi and miso are io0 and io1 rather than a direction each, io2\n"
+             "and io3 are the other two, and there is no D/C pin - the command\n"
+             "rides in the transfer's instruction phase.\n"
+             "Brightness is a panel command on an AMOLED, so there is no\n"
+             "backlight here for this library to own.\n"
+             "The same two chips as the PaperMono: an M5PM1 for power and an\n"
+             "M5IOE1 for the panel's reset, the touch layer and the audio\n"
+             "amplifier - which is left off, because a board bring-up that\n"
+             "makes a noise is a bug.",
+        i2c_int=(47, 48),
+        i2c_ext=(10, 11),
+        power_hold=None,
+        rgb_led=None,
+        buttons={"A": 2, "B": 1, "Pwr": "pek"},
+        pmic="m5pm1",
+        rails=("Charge", "Dcdc5V", "Ldo3V3", "Led"),
+        io_expander="m5ioe1",
+        backlight=None,
+        display=dict(bus="qspi", mosi=41, miso=42, io2=46, io3=45, sclk=40,
+                     dc=-1, cs=39, rst=-1,
+                     freq_write=80000000, freq_read=1000000,
+                     w=468, h=468, ox=6, oy=0, rotation=0, invert=False,
+                     three_wire=True),
+        power_on="""\
+// The panel's chip select is a real pin and goes high before anything
+// touches the bus. (M5GFX.cpp, the StopWatch branch)
+pinMode(39, OUTPUT);
+digitalWrite(39, HIGH);
+// On the expander: IO1 is the mux control, IO4 the touch layer's reset,
+// IO5 the panel's, IO8 a rail, and IO3 the audio amplifier.
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io1);
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io4);
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io5);
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io8);
+// The amplifier's enable is configured but left low. Bringing a board up
+// is not an excuse to make a noise.
+Io.setPushPull(TinyM5BoardIoExpanderM5ioe1::Io::Io3);
+Io.setOutput(TinyM5BoardIoExpanderM5ioe1::Io::Io3);
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io3, false);
+delay(10);
+// The panel and the touch layer come out of reset together.
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io4, false);
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io5, false);
+delay(8);
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io4, true);
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io5, true);
+delay(2);
+// The second half of the amplifier, on IO10.
+Io.setPushPull(TinyM5BoardIoExpanderM5ioe1::Io::Io10);
+Io.setOutput(TinyM5BoardIoExpanderM5ioe1::Io::Io10);
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io10, false);
+// The panel's tearing-effect line. An input the driver may wait on; it
+// is pulled up here so that first read is not a coin toss.
+pinMode(38, INPUT_PULLUP);
+""",
     ),
     dict(
         id="PaperMono",
@@ -693,7 +757,7 @@ digitalWrite(21, LOW);
         rails=("Charge", "Dcdc5V", "Ldo3V3", "Led"),
         io_expander="m5ioe1",
         backlight=("m5pm1_pwm", "Ch0", "Io3", 5000),
-        display=dict(bus="spi2", mosi=14, miso=-1, sclk=15, dc=17, cs=16, rst=-1,
+        display=dict(bus="spi", mosi=14, miso=-1, sclk=15, dc=17, cs=16, rst=-1,
                      busy=18,
                      freq_write=40000000, freq_read=10000000,
                      w=800, h=480, ox=0, oy=0, rotation=3, invert=False,
@@ -824,7 +888,7 @@ pinMode(18, INPUT);
         buttons={"A": ("io", "P2"), "B": ("io", "P1"), "C": ("io", "P0")},
         io_expander="pi4io",
         backlight=("pi4io_switch", "P7", True),
-        display=dict(bus="spi2", mosi=8, miso=9, sclk=7, dc=6, cs=12, rst=3,
+        display=dict(bus="spi", mosi=8, miso=9, sclk=7, dc=6, cs=12, rst=3,
                      freq_write=40000000, freq_read=16000000,
                      w=135, h=240, ox=52, oy=40, rotation=1, invert=True,
                      three_wire=True),
@@ -868,6 +932,11 @@ IOE_CLASS = {
 
 RAIL_ENUM = {"axp192": "TinyM5BoardPowerAxp192"}
 
+# What the panel is wired as. Not which SPI peripheral it lands on: any
+# pin can reach any host through the GPIO matrix, so that is the graphics
+# library's choice rather than the board's.
+BUS_ENUM = {"spi": "Spi", "qspi": "QSpi"}
+
 
 def derive(b):
     soc = SOC[b["soc"]]
@@ -896,6 +965,14 @@ def derive(b):
     d["wire0"] = d["i2c_int"] if d["has_int_i2c"] else d["i2c_ext"]
     # The card is only this library's business when it sits on the panel's
     # bus, so the column cannot mean anything without a panel to share.
+    if d["has_display"]:
+        dd = d["display"]
+        if dd.get("bus", "spi") not in BUS_ENUM:
+            raise SystemExit(f"{d['id']}: unknown display bus {dd['bus']!r}")
+        if (dd.get("io2", -1) >= 0) != (dd.get("bus", "spi") == "qspi"):
+            raise SystemExit(f"{d['id']}: io2 / io3 belong to a qspi panel and "
+                             "are required on one - on four data lines the "
+                             "other two are not optional")
     d["has_sd_spi"] = d["sd_spi_cs"] is not None
     if d["has_sd_spi"]:
         if not d["has_display"]:
@@ -1211,8 +1288,10 @@ def emit_board(entry):
         a("  /// library owns no driver and draws nothing.\n")
         a("  static constexpr TinyM5::Display display()\n  {\n")
         a("    return TinyM5::Display{\n")
+        a(f"        /*bus*/ TinyM5::DisplayBus::{BUS_ENUM[dd.get('bus', 'spi')]},\n")
         a(f"        /*mosi*/ {dd['mosi']}, /*miso*/ {dd['miso']}, /*sclk*/ {dd['sclk']},\n")
         a(f"        /*dc*/ {dd['dc']}, /*cs*/ {dd['cs']},\n")
+        a(f"        /*io2*/ {dd.get('io2', -1)}, /*io3*/ {dd.get('io3', -1)},\n")
         a("        /*rst*/ -1,  // begin() has already pulsed it\n")
         a(f"        /*busy*/ {dd.get('busy', -1)},\n")
         a(f"        /*freqWrite*/ {dd['freq_write']}, /*freqRead*/ {dd['freq_read']},\n")

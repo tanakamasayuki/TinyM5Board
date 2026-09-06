@@ -106,8 +106,10 @@ class TinyM5BoardStation {
   static constexpr TinyM5::Display display()
   {
     return TinyM5::Display{
+        /*bus*/ TinyM5::DisplayBus::Spi,
         /*mosi*/ 23, /*miso*/ -1, /*sclk*/ 18,
         /*dc*/ 19, /*cs*/ 5,
+        /*io2*/ -1, /*io3*/ -1,
         /*rst*/ -1,  // begin() has already pulsed it
         /*busy*/ -1,
         /*freqWrite*/ 40000000, /*freqRead*/ 15000000,

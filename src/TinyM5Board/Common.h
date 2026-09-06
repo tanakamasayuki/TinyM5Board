@@ -78,8 +78,24 @@ enum Init : uint8_t {
 /// channel rather than a pin, and `Board.Backlight` is the one way to
 /// reach all of them. Handing the pin to a graphics library as well would
 /// give the brightness two owners.
+/// Which wire protocol the panel is on.
+///
+/// The pins below mean different things on each. On QSpi, `mosi` and
+/// `miso` are the first two of four data lines rather than a direction
+/// each, and there is no D/C pin at all - the command goes in the
+/// instruction phase of the transfer. A driver that reads the pins
+/// without reading this would wire an AMOLED up as a two-wire SPI panel
+/// and see nothing.
+enum class DisplayBus : uint8_t {
+  Spi,
+  QSpi,
+};
+
 struct Display {
+  DisplayBus bus;
   int8_t mosi, miso, sclk, dc, cs;
+  /// The other two data lines, and -1 on everything that is not QSpi.
+  int8_t io2, io3;
   int8_t rst;  ///< always -1: begin() has already pulsed it. Do not touch
   /// The panel's BUSY line, and -1 on the panels that do not have one.
   /// Only the electrophoretic displays do: a refresh takes hundreds of

@@ -77,6 +77,6 @@ name=M5StampPLC id=21
 pins i2c=13/15 ext=2/1 led=21/1 hold=-1
 has display=1 backlight=1 battery=0 intI2c=1 extI2c=1 shared=0
 --- display ---
-spi mosi=8 miso=9 sclk=7 dc=6 cs=12 rst=-1 3wire=1 sdcs=10 busy=-1
+bus=spi mosi=8 miso=9 io2=-1 io3=-1 sclk=7 dc=6 cs=12 rst=-1 3wire=1 sdcs=10 busy=-1
 freq write=40000000 read=16000000
 panel 135x240 offset=52,40 rotation=1 invert=1

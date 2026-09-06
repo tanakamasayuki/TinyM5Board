@@ -59,7 +59,7 @@ name=M5Tough id=8
 pins i2c=21/22 ext=32/33 led=-1/0 hold=-1
 has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=0
 --- display ---
-spi mosi=23 miso=38 sclk=18 dc=15 cs=5 rst=-1 3wire=1 sdcs=4 busy=-1
+bus=spi mosi=23 miso=38 io2=-1 io3=-1 sclk=18 dc=15 cs=5 rst=-1 3wire=1 sdcs=4 busy=-1
 freq write=40000000 read=16000000
 panel 320x240 offset=0,0 rotation=3 invert=1
 --- battery ---
