@@ -1,0 +1,99 @@
+--- begin() ---
+i2c0 begin sda=2 scl=3 hz=100000
+i2c0 write 0x6E [00] (no stop)
+i2c0 read  0x6E 4 -> [50 00 00 00]
+i2c0 write 0x6E [09 00]
+i2c0 write 0x6E [0A 00]
+i2c0 write 0x6E [06] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [06 17]
+i2c0 write 0x4F [00] (no stop)
+i2c0 read  0x4F 2 -> [01 00]
+i2c0 write 0x4F [23 00]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [05 08]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [08]
+i2c0 write 0x4F [05 18]
+i2c0 write 0x4F [13] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [13 00]
+i2c0 write 0x4F [13] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [13 00]
+i2c0 write 0x4F [03] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [03 08]
+i2c0 write 0x4F [03] (no stop)
+i2c0 read  0x4F 1 -> [08]
+i2c0 write 0x4F [03 18]
+i2c0 write 0x4F [13] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [13 00]
+i2c0 write 0x4F [03] (no stop)
+i2c0 read  0x4F 1 -> [18]
+i2c0 write 0x4F [03 18]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [18]
+i2c0 write 0x4F [05 10]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [10]
+i2c0 write 0x4F [05 18]
+i2c0 write 0x6E [11] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [11 04]
+i2c0 write 0x6E [16] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [16 00]
+i2c0 write 0x6E [10] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [10 04]
+i2c0 write 0x6E [13] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [13 00]
+i2c0 write 0x6E [11] (no stop)
+i2c0 read  0x6E 1 -> [04]
+i2c0 write 0x6E [11 04]
+i2c0 write 0x6E [11] (no stop)
+i2c0 read  0x6E 1 -> [04]
+i2c0 write 0x6E [11 00]
+i2c0 write 0x6E [11] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [11 04]
+pinMode(10, OUTPUT)
+spi begin sclk=9 miso=8 mosi=7
+spi transaction hz=400000 mode=0
+digitalWrite(10, 1)
+spi xfer 16 x FF
+digitalWrite(10, 0)
+spi xfer 7A 00 00 00 00 FD FF FF
+digitalWrite(10, 1)
+spi xfer 16 x FF
+digitalWrite(10, 0)
+spi xfer 40 00 00 00 00 95 FF FF
+digitalWrite(10, 1)
+spi end transaction
+spi end
+i2c0 write 0x4F [14] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [14 00]
+i2c0 write 0x4F [04] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [04 02]
+i2c0 write 0x4F [25 E8 03]
+i2c0 write 0x4F [21 08 84]
+--- board ---
+name=M5ToughC5 id=33
+pins i2c=2/3 ext=2/3 led=-1/0 hold=-1
+has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=1
+--- display ---
+bus=spi mosi=7 miso=8 io2=-1 io3=-1 sclk=9 dc=26 cs=25 rst=-1 3wire=1 sdcs=10 busy=-1
+freq write=40000000 read=16000000
+panel 320x240 offset=0,0 rotation=3 invert=1
+--- battery ---
+i2c0 write 0x6E [22] (no stop)
+i2c0 read  0x6E 2 -> [A0 0F]
+i2c0 write 0x6E [22] (no stop)
+i2c0 read  0x6E 2 -> [A0 0F]
+mV=4000 level=87

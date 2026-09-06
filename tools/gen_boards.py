@@ -696,6 +696,56 @@ Power.gpioResetPulse(TinyM5BoardPowerAxp192::Gpio::Io1);
         sd_spi_cs=4,
     ),
     dict(
+        id="ToughC5",
+        name="M5ToughC5",
+        board_id=33,
+        family="Core",
+        soc="esp32c5",
+        note="The Tough on an ESP32-C5, with the M5PM1 and M5IOE1 pair in\n"
+             "place of the AXP192. Its A/B/C are touch zones rather than\n"
+             "pins, like the Tough's.\n"
+             "Port A is the internal bus, physically split through a level\n"
+             "shifter, so kSharesI2cBus is true.\n"
+             "The panel's reset and supply are expander pins and the touch\n"
+             "layer's reset is a power-chip pin, so nothing on the SoC drives\n"
+             "any of them. Its card shares the panel's SPI bus.",
+        i2c_int=(2, 3),
+        i2c_ext=(2, 3),
+        power_hold=None,
+        rgb_led=None,
+        buttons={"Pwr": "pek"},
+        pmic="m5pm1",
+        rails=("Charge", "Dcdc5V", "Ldo3V3", "Led"),
+        io_expander="m5ioe1",
+        backlight=("m5ioe1_pwm", "Ch4", "Io10", 1000),
+        display=dict(bus="spi", mosi=7, miso=8, sclk=9, dc=26, cs=25, rst=-1,
+                     freq_write=40000000, freq_read=16000000,
+                     w=320, h=240, ox=0, oy=0, rotation=3, invert=True,
+                     three_wire=True),
+        sd_spi_cs=10,
+        power_on="""\
+// IO4 is the panel's reset and IO5 its supply. The reset line has no
+// pull-up on the board, so the output latch is written high *before* the
+// pin becomes an output - the other order drives it low for as long as
+// the two I2C transactions take, which resets the panel.
+// (M5GFX.cpp, the ToughC5 branch)
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io4, true);
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io5, true);
+Io.setPushPull(TinyM5BoardIoExpanderM5ioe1::Io::Io4);
+Io.setPushPull(TinyM5BoardIoExpanderM5ioe1::Io::Io5);
+Io.setOutput(TinyM5BoardIoExpanderM5ioe1::Io::Io4);
+Io.setOutput(TinyM5BoardIoExpanderM5ioe1::Io::Io5);
+Io.resetPulse(TinyM5BoardIoExpanderM5ioe1::Io::Io4);
+// The touch layer's reset is GPIO2 inside the power chip, and takes the
+// same care for the same reason.
+Power.gpioWrite(TinyM5BoardPowerM5pm1::Gpio::Io2, true);
+Power.gpioFunctionGpio(TinyM5BoardPowerM5pm1::Gpio::Io2);
+Power.gpioOutput(TinyM5BoardPowerM5pm1::Gpio::Io2);
+Power.gpioPushPull(TinyM5BoardPowerM5pm1::Gpio::Io2);
+Power.gpioResetPulse(TinyM5BoardPowerM5pm1::Gpio::Io2);
+""",
+    ),
+    dict(
         id="StickS3",
         name="M5StickS3",
         board_id=26,

@@ -4,22 +4,22 @@
 
 ## 1. 現在地
 
-**38 機種。ADC / AXP192 / AXP2101 / M5PM1 / AW32001 の 5 系統が、ホストのゴールデンと
+**39 機種。ADC / AXP192 / AXP2101 / M5PM1 / AW32001 の 5 系統が、ホストのゴールデンと
 実物のツールチェーンのビルド（Tier 0）まで通っている。SoC は esp32 / S3 /
-C3 / C6 / H2 / **P4** の 6 種類。**
+C3 / **C5** / C6 / H2 / P4 の 7 種類。**
 
 | 項目 | 状況 |
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **38 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan / **CoreP4X**、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / Dial / DinMeter / StopWatch / Cardputer / **CardputerADV** / VAMeter / AirQ / NessoN1、Paper: PaperMono / Paper / **CoreInk** |
+| ボード定義 | **39 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / **ToughC5** / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan / CoreP4X、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / Dial / DinMeter / StopWatch / Cardputer / **CardputerADV** / VAMeter / AirQ / NessoN1、Paper: PaperMono / Paper / **CoreInk** |
 | 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） / **`PowerAw32001`**（充電器 + 燃料計の 2 チップ、D42） |
 | IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / `IoExpanderPi4io`。**主要 3 種**。**1 機種に 2 個**も持てる（D43） |
 | バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / AXP2101 (Bldo1・Dldo1) / Core2 / M5IOE1 の PWM / **M5PM1 の PWM**。**すべて M5GFX と同じカーブ** |
 | ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。名前はカタログから導出（CoreInk の `Ext` で 5 つ目）。**click / hold / click カウントまで M5Unified と同じ状態機械**（D36） |
 | 表示 | `TinyM5::Display`（SPI / QSPI / EPD の BUSY）と **`DisplayDsi`**（MIPI-DSI、D41） |
-| `tests/begin/` | **39 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
-| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（38 機種 + 入口 2 本 / **6 種類の SoC**） |
+| `tests/begin/` | **40 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
+| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（39 機種 + 入口 2 本 / **7 種類の SoC**） |
 | `tests/tier2/` | **サンプルを実機コアで建てる**（D20 の裏取り）。4 本 / 約 28 秒 |
 | `tests/unit/` | **ボード非依存のクラス**の検査。Button の状態機械と SD のモード落とし（39 + 13 検査 / 約 16 秒） |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` / `examples` は別ジョブ |
@@ -72,11 +72,11 @@ C3 / C6 / H2 / **P4** の 6 種類。**
 ### 1.3 テストの所要時間
 
 `tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
-**1 スケッチ約 10 秒**（実測）なので 39 本で 6 分半。**群ごとに並列化してある**ので
+**1 スケッチ約 10 秒**（実測）なので 40 本で 6 分半。**群ごとに並列化してある**ので
 CI では最長の群の時間で済み、ローカルは `pytest begin/Stick` のように絞れる
 （4 機種で約 30 秒 / 実測）。
 
-`tests/tier0` は 40 本ビルドして**約 3 分**、`tests/unit` は 2 本で**約 16 秒**。
+`tests/tier0` は 41 本ビルドして**約 3 分**、`tests/unit` は 2 本で**約 16 秒**。
 **全部で 11〜19 分**（35 機種 + サンプル 4 本 / ローカル実測。他のビルドと並走すると倍近く振れる）。
 どちらも機種数に線形だが、実行が無い分だけ安い。
 ボード非依存の変更は `unit` だけ回せばよい。
@@ -293,6 +293,28 @@ bus_cfg.lane_mbps = hit_st7121 ? 900 : 1040;
 `DisplayDsi::laneMbps` はビルド時の値なので、どちらかを書けばもう一方で
 **画面が出ない。** 利用者にも見分けがつかない以上、AtomS3 と同じく**持たない**。
 ここは「電源が書けたら入る」ではなく、**そもそも入らない**側の機種だった。
+
+#### 残りの機種 —— 一通り当たった結果
+
+上流の表と分岐を全部見た。**入るものは入れた**ので、残りは理由つきで並べておく。
+
+| 機種 | 状況 |
+| --- | --- |
+| **Tab5 / Tab5X** | パネル 3 種で **DSI のレーン速度が違う**（上）。持たない |
+| **AtomS3** | ロット差が寸法まで（上）。持たない |
+| **AtomS3R / RExt / RCam / VoiceS3R** | 上流の表に **LED もボタンも無い**。AtomS3R は画面ありでロット差の疑いもある。**表が薄すぎて起こせない** |
+| **PowerHub** | ボタンの片方が**専用チップの I2C レジスタ読み**。そのチップのドライバが要る |
+| **StampS3Bat** | 電源が **M5PM1_G2**（世代違い）。同じドライバで通るか未確認 |
+| **CoreMatrix** | SoC が **ESP32-C61**。arduino-esp32 3.3.11 に FQBN が無く、Tier 0 が回せない |
+| **PaperDIY** | PaperS3 と同じ分岐にいる（下） |
+| **UnitPoEP4** | 表にあるのは I2C 2 本だけ。**出せるものがほぼ無い** |
+| **StampC5 / C6 / S3Mini / P4 / P4X / DualKey / M5Camera / AtomPsram** | 表に行が無いか、あっても中身が無い。**ピン表として出せるものが無い** |
+| **M5Stack 初代** | IP5306（未実装）と、`invert` を GPIO33 で読むロット差。**判断が要る**（下） |
+
+**M5Stack 初代だけは Tab5 / AtomS3 と種類が違う。** 違うのは `invert` の
+1 ビットだけで、寸法もピンも同じ。REQUIREMENTS §4.3 の「別ボードとして分けて
+選ばせる」が使える可能性がある（v2.6 以降は SKU として別）。
+**入れるなら、その判断を先にする。**
 
 #### PaperS3 / PaperColor —— 上流の諸元に読めない点がある
 

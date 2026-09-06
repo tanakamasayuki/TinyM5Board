@@ -79,6 +79,8 @@
 #include "TinyM5BoardTough.h"
 #elif defined(TINYM5_CORE2)
 #include "TinyM5BoardCore2.h"
+#elif defined(TINYM5_TOUGHC5)
+#include "TinyM5BoardToughC5.h"
 #elif defined(TINYM5_STICKS3)
 #include "TinyM5BoardStickS3.h"
 #elif defined(TINYM5_CHAINCAPTAIN)

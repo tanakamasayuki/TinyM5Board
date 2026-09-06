@@ -34,6 +34,7 @@ enum class BoardId : uint16_t {
   StopWatch = 30,
   CoreP4X = 31,
   ChainCaptain = 32,
+  ToughC5 = 33,
   AtomLite = 128,
   AtomU = 130,
   TimerCam = 132,
