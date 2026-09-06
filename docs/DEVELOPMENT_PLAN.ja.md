@@ -4,22 +4,22 @@
 
 ## 1. 現在地
 
-**34 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
+**35 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
 実物のツールチェーンのビルド（Tier 0）まで通っている。SoC は esp32 / S3 /
-C3 / C6 / H2 の 5 種類。**
+C3 / C6 / H2 / **P4** の 6 種類。**
 
 | 項目 | 状況 |
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **34 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / Dial / DinMeter / StopWatch / Cardputer / VAMeter / **AirQ**、Paper: PaperMono / **Paper** |
+| ボード定義 | **35 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan / **CoreP4X**、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / Dial / DinMeter / StopWatch / Cardputer / VAMeter / **AirQ**、Paper: PaperMono / **Paper** |
 | 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
 | IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / **`IoExpanderPi4io`**。**主要 3 種が揃った** |
 | バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / AXP2101 (Bldo1・Dldo1) / Core2 / M5IOE1 の PWM / **M5PM1 の PWM**。**すべて M5GFX と同じカーブ** |
 | ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。**click / hold / click カウントまで M5Unified と同じ状態機械**（D36） |
-| 表示 | `TinyM5::Display`。3 線式・PMIC 越しリセット・EPD の BUSY・**QSPI の 4 本**の表現あり |
-| `tests/begin/` | **35 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
-| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（34 機種 + 入口 2 本 / 5 種類の SoC） |
+| 表示 | `TinyM5::Display`（SPI / QSPI / EPD の BUSY）と **`DisplayDsi`**（MIPI-DSI、D41） |
+| `tests/begin/` | **36 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
+| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（35 機種 + 入口 2 本 / **6 種類の SoC**） |
 | `tests/tier2/` | **サンプルを実機コアで建てる**（D20 の裏取り）。4 本 / 約 28 秒 |
 | `tests/unit/` | **ボード非依存のクラス**の検査。Button の状態機械と SD のモード落とし（39 + 13 検査 / 約 16 秒） |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` / `examples` は別ジョブ |
@@ -72,16 +72,16 @@ C3 / C6 / H2 の 5 種類。**
 ### 1.3 テストの所要時間
 
 `tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
-**1 スケッチ約 10 秒**（実測）なので 35 本で 6 分近い。**群ごとに並列化してある**ので
+**1 スケッチ約 10 秒**（実測）なので 36 本で 6 分。**群ごとに並列化してある**ので
 CI では最長の群の時間で済み、ローカルは `pytest begin/Stick` のように絞れる
 （4 機種で約 30 秒 / 実測）。
 
-`tests/tier0` は 36 本ビルドして**約 3 分**、`tests/unit` は 2 本で**約 16 秒**。
-**全部で 11 分 8 秒**（34 機種 + サンプル 4 本 / ローカル実測。負荷で 2〜3 分は振れる）。
+`tests/tier0` は 37 本ビルドして**約 3 分**、`tests/unit` は 2 本で**約 16 秒**。
+**全部で 11〜19 分**（35 機種 + サンプル 4 本 / ローカル実測。他のビルドと並走すると倍近く振れる）。
 どちらも機種数に線形だが、実行が無い分だけ安い。
 ボード非依存の変更は `unit` だけ回せばよい。
 
-**いまの最長は Other 群の 11 スケッチ。** Dial / DinMeter / Cardputer / VAMeter /
+**いまの最長は Other 群の 11 スケッチ**（Core 群が 8 で続く）**。** Dial / DinMeter / Cardputer / VAMeter /
 StopWatch のように「群に収まらない製品」が全部ここに落ちるので、今後も伸びる。
 **軸を群からボード単位に落とす**時期が近い（生成できるので workflow は変わらない）。
 
@@ -220,7 +220,7 @@ M5GFX の該当分岐を読んだ結果（2026-09-06 の master）。
 | ~~**PaperMono** (EPD)~~ | **素の SPI** —— mosi 14 / sclk 15 / dc 17 / cs 16 / 3wire | ~~`busy` ピン 1 本~~ **—— 足して通した** |
 | ~~M5Paper~~ / PaperS3 / PaperColor (EPD) | 同上 | **M5Paper は通した。** 残り 2 つは §2-9 |
 | ~~**StopWatch** (AMOLED)~~ | **QSPI** —— io0 41 / io1 42 / io2 46 / io3 45 / sclk 40 / cs 39 | ~~バスの種別と `io2` `io3`~~ **—— 足して通した** |
-| **CoreP4X** | **MIPI-DSI** | レーン数・タイミング一式。**構造体を広げる話ではない** |
+| ~~**CoreP4X**~~ | **MIPI-DSI** | ~~レーン数・タイミング一式~~ **—— `DisplayDsi` を隣に置いて通した（D41）** |
 | CoreMatrix | LED マトリクス (I2C) | そもそもフレームバッファのパネルではない |
 
 **提案（暫定）**:
@@ -230,13 +230,12 @@ M5GFX の該当分岐を読んだ結果（2026-09-06 の master）。
    PaperColor はピンを書くだけで入る
 2. ~~**QSPI は `bus` タグ + `io2` / `io3`。**~~ —— **そのとおりだった。**
    `DisplayBus` と `io2` / `io3` を足し、StopWatch を通した（D40）
-3. **DSI は `Display` を広げない。** 共通部分がほとんど無いので、
-   届く機種が来たときに `displayDsi()` のような別の窓口にする
+3. ~~**DSI は `Display` を広げない。**~~ —— **そのとおりにした。**
+   `displayDsi()` と `TINYM5_HAS_DISPLAY_DSI`（D41）。CoreP4X で通した
 4. **LED マトリクスは表示として持たない。** ピンを出すだけにする
 
-**残りはいまは足さない。** 使うボードが 1 機種も入っていない列を先に作ると、
-検証できない構造が残る（D4 の停止則）。**CoreP4X が来たときに DSI の窓口を足す。**
-LED マトリクスは表示として持たない方針のまま。
+**残るのは LED マトリクスだけ**で、これは表示として持たない方針のまま
+（CoreMatrix はピンを出すだけにする）。**表示バスの宿題はここで終わり。**
 
 ### 2-9. いま入れられない機種と、その理由
 

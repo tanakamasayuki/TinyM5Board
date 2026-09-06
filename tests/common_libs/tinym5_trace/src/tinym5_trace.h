@@ -293,12 +293,24 @@ inline void finish()
     line("--- display ---");
     line("bus=%s mosi=%d miso=%d io2=%d io3=%d sclk=%d dc=%d cs=%d rst=%d "
          "3wire=%d sdcs=%d busy=%d",
-         d.bus == TinyM5::DisplayBus::QSpi ? "qspi" : "spi", d.mosi, d.miso,
+         d.bus == TinyM5::DisplayBus::Dsi ? "dsi"
+             : d.bus == TinyM5::DisplayBus::QSpi ? "qspi" : "spi",
+         d.mosi, d.miso,
          d.io2, d.io3, d.sclk, d.dc, d.cs, d.rst, d.threeWire,
          TINYM5_BOARD::kSdSpiCs, d.busy);
     line("freq write=%u read=%u", (unsigned)d.freqWrite, (unsigned)d.freqRead);
     line("panel %ux%u offset=%u,%u rotation=%u invert=%d", d.width, d.height,
          d.offsetX, d.offsetY, d.rotation, d.invert);
+#if TINYM5_HAS_DISPLAY_DSI
+    {
+      const auto z = TINYM5_BOARD::displayDsi();
+      line("dsi bus=%u lanes=%u mbps=%u ldo=%u/%umV dpi=%uMHz", z.busId,
+           z.laneCount, z.laneMbps, z.ldoChannel, z.ldoMillivolt, z.dpiFreqMhz);
+      line("dsi hsync %u/%u/%u vsync %u/%u/%u", z.hsyncBackPorch,
+           z.hsyncPulseWidth, z.hsyncFrontPorch, z.vsyncBackPorch,
+           z.vsyncPulseWidth, z.vsyncFrontPorch);
+    }
+#endif
   }
 #endif
 #if TINYM5_HAS_BATTERY

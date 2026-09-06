@@ -900,6 +900,50 @@ delay(2);
 """,
     ),
     dict(
+        id="CoreP4X",
+        name="M5CoreP4X",
+        board_id=31,
+        family="Core",
+        soc="esp32p4",
+        note="An ESP32-P4 with a MIPI-DSI panel - the first board here whose\n"
+             "screen has no pins at all. The lanes come out of the DSI\n"
+             "peripheral, so what is board knowledge is how many are wired,\n"
+             "how fast they run, which internal LDO feeds the PHY and the\n"
+             "blanking the glass was cut for. That is displayDsi(); the\n"
+             "geometry is in display() like everywhere else.\n"
+             "An M5PM1 for power and an M5IOE1 for the rest: the touch reset,\n"
+             "the backlight, the panel's supply and reset, and the 3V3 rail\n"
+             "that MBUS, the card slot, the IMU, the infrared and Ethernet all\n"
+             "share are expander pins.",
+        i2c_int=(11, 9),
+        i2c_ext=(18, 16),
+        power_hold=None,
+        rgb_led=None,
+        buttons={"Pwr": "pek"},
+        pmic="m5pm1",
+        rails=("Boost",),
+        io_expander="m5ioe1",
+        backlight=("m5ioe1_pwm", "Ch1", "Io9", 1000),
+        display=dict(bus="dsi", w=480, h=480, ox=0, oy=0, rotation=2,
+                     invert=False, three_wire=False),
+        display_dsi=dict(bus_id=0, lanes=2, mbps=600, ldo_ch=3, ldo_mv=2500,
+                         dpi_mhz=24, hbp=40, hpw=2, hfp=40,
+                         vbp=8, vpw=4, vfp=200),
+        power_on="""\
+// Five expander pins, all of them supplies or resets: IO8 the touch
+// layer's reset, IO9 the backlight, IO10 the panel's supply, IO11 its
+// reset, and IO12 the 3V3 rail shared by MBUS, the card slot, the IMU,
+// the infrared receiver and Ethernet. (M5GFX.cpp, the CoreP4X branch)
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io8);
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io9);
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io10);
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io11);
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io12);
+// The panel wants its supply settled before anything talks to it.
+delay(150);
+""",
+    ),
+    dict(
         id="StampPico",
         name="M5StampPico",
         board_id=133,
@@ -1021,8 +1065,8 @@ Io.enableInput(TinyM5BoardIoExpanderPi4io::Io::P2);
 # hardware", which is also what the kHas* flags are derived from.
 OPTIONAL = dict(note="", i2c_int=None, i2c_ext=None, power_hold=None, rgb_led=None,
                 buttons={}, pmic=None, bat_adc=None, rails=(), rail_mv={},
-                io_expander=None, backlight=None, display=None, sd_spi_cs=None,
-                power_on="")
+                io_expander=None, backlight=None, display=None, display_dsi=None,
+                sd_spi_cs=None, power_on="")
 
 # Rail names as a board header spells them, mapped to the driver's enum.
 # The class that owns `Power` for each `pmic` value. A PEK button reads
@@ -1045,7 +1089,7 @@ RAIL_ENUM = {"axp192": "TinyM5BoardPowerAxp192"}
 # What the panel is wired as. Not which SPI peripheral it lands on: any
 # pin can reach any host through the GPIO matrix, so that is the graphics
 # library's choice rather than the board's.
-BUS_ENUM = {"spi": "Spi", "qspi": "QSpi"}
+BUS_ENUM = {"spi": "Spi", "qspi": "QSpi", "dsi": "Dsi"}
 
 
 def derive(b):
@@ -1083,6 +1127,15 @@ def derive(b):
             raise SystemExit(f"{d['id']}: io2 / io3 belong to a qspi panel and "
                              "are required on one - on four data lines the "
                              "other two are not optional")
+        if (dd.get("bus") == "dsi") != (d["display_dsi"] is not None):
+            raise SystemExit(f"{d['id']}: a dsi panel needs display_dsi and "
+                             "nothing else may carry it - the lanes, the LDO "
+                             "and the timings have no meaning on a bus with "
+                             "pins")
+        if dd.get("bus") == "dsi" and any(dd.get(k, -1) >= 0 for k in
+                                          ("mosi", "miso", "sclk", "dc", "cs", "rst")):
+            raise SystemExit(f"{d['id']}: a dsi panel has no pins to report")
+    d["has_dsi"] = d["display_dsi"] is not None
     d["has_sd_spi"] = d["sd_spi_cs"] is not None
     if d["has_sd_spi"]:
         if not d["has_display"]:
@@ -1363,8 +1416,8 @@ def emit_board(entry):
         # the generated context it lands in.
         for line in b["power_on"].rstrip("\n").split("\n"):
             a(f"    {line}\n" if line else "\n")
-    if b["display"] and b["display"]["rst"] >= 0:
-        a(f"    TinyM5::resetPulse({b['display']['rst']});\n")
+    if b["display"] and b["display"].get("rst", -1) >= 0:
+        a(f"    TinyM5::resetPulse({b['display'].get('rst', -1)});\n")
     if b["display"] and b["display"].get("busy", -1) >= 0:
         a("    // The panel holds this line while it refreshes. Nothing here\n")
         a("    // waits on it, but a floating pin would make the driver's first\n")
@@ -1374,8 +1427,8 @@ def emit_board(entry):
         dd = d["display"]
         a("    // The card is on the panel's wires. Left in SD mode it answers\n")
         a("    // the panel id read that a graphics library starts with.\n")
-        a(f"    TinyM5::sdToSpiMode(/*sclk*/ {dd['sclk']}, /*miso*/ {dd['miso']},\n")
-        a(f"                        /*mosi*/ {dd['mosi']}, kSdSpiCs);\n")
+        a(f"    TinyM5::sdToSpiMode(/*sclk*/ {dd.get('sclk', -1)}, /*miso*/ {dd.get('miso', -1)},\n")
+        a(f"                        /*mosi*/ {dd.get('mosi', -1)}, kSdSpiCs);\n")
     if b["backlight"]:
         a("    Backlight.begin();\n")
     ret = "ok" if b["pmic"] in ("axp192", "axp2101", "core2", "m5pm1") else "true"
@@ -1404,16 +1457,32 @@ def emit_board(entry):
         a("  static constexpr TinyM5::Display display()\n  {\n")
         a("    return TinyM5::Display{\n")
         a(f"        /*bus*/ TinyM5::DisplayBus::{BUS_ENUM[dd.get('bus', 'spi')]},\n")
-        a(f"        /*mosi*/ {dd['mosi']}, /*miso*/ {dd['miso']}, /*sclk*/ {dd['sclk']},\n")
-        a(f"        /*dc*/ {dd['dc']}, /*cs*/ {dd['cs']},\n")
+        a(f"        /*mosi*/ {dd.get('mosi', -1)}, /*miso*/ {dd.get('miso', -1)}, /*sclk*/ {dd.get('sclk', -1)},\n")
+        a(f"        /*dc*/ {dd.get('dc', -1)}, /*cs*/ {dd.get('cs', -1)},\n")
         a(f"        /*io2*/ {dd.get('io2', -1)}, /*io3*/ {dd.get('io3', -1)},\n")
-        a("        /*rst*/ -1,  // begin() has already pulsed it\n")
+        if dd.get("rst", -1) >= 0:
+            a("        /*rst*/ -1,  // begin() has already pulsed it\n")
+        else:
+            a("        /*rst*/ -1,  // this panel has no reset pin of its own\n")
         a(f"        /*busy*/ {dd.get('busy', -1)},\n")
-        a(f"        /*freqWrite*/ {dd['freq_write']}, /*freqRead*/ {dd['freq_read']},\n")
+        a(f"        /*freqWrite*/ {dd.get('freq_write', 0)}, /*freqRead*/ {dd.get('freq_read', 0)},\n")
         a(f"        /*width*/ {dd['w']}, /*height*/ {dd['h']},\n")
         a(f"        /*offsetX*/ {dd['ox']}, /*offsetY*/ {dd['oy']},\n")
         a(f"        /*rotation*/ {dd.get('rotation', 0)}, /*invert*/ {'true' if dd['invert'] else 'false'},\n")
         a(f"        /*threeWire*/ {'true' if dd.get('three_wire') else 'false'}}};\n")
+        a("  }\n\n")
+    if d["has_dsi"]:
+        z = d["display_dsi"]
+        a("  /// The lanes, the PHY's supply and the timings. Everything a\n")
+        a("  /// DSI panel needs that a pin number cannot say.\n")
+        a("  static constexpr TinyM5::DisplayDsi displayDsi()\n  {\n")
+        a("    return TinyM5::DisplayDsi{\n")
+        a(f"        /*busId*/ {z['bus_id']}, /*laneCount*/ {z['lanes']},\n")
+        a(f"        /*laneMbps*/ {z['mbps']},\n")
+        a(f"        /*ldoChannel*/ {z['ldo_ch']}, /*ldoMillivolt*/ {z['ldo_mv']},\n")
+        a(f"        /*dpiFreqMhz*/ {z['dpi_mhz']},\n")
+        a(f"        /*hsync*/ {z['hbp']}, {z['hpw']}, {z['hfp']},\n")
+        a(f"        /*vsync*/ {z['vbp']}, {z['vpw']}, {z['vfp']}}};\n")
         a("  }\n\n")
     a("  static constexpr const char *getBoardName() { return kName; }\n")
     a("  static constexpr TinyM5::BoardId getBoard() { return kBoardId; }\n\n")
@@ -1437,6 +1506,7 @@ def emit_board(entry):
     for macro, val in (("TINYM5_HAS_DISPLAY", d["has_display"]),
                        ("TINYM5_HAS_BACKLIGHT", d["has_backlight"]),
                        ("TINYM5_HAS_BATTERY", d["has_battery"]),
+                       ("TINYM5_HAS_DISPLAY_DSI", d["has_dsi"]),
                        ("TINYM5_HAS_INTERNAL_I2C", d["has_int_i2c"]),
                        ("TINYM5_HAS_EXTERNAL_I2C", d["has_ext_i2c"]),
                        ("TINYM5_HAS_RGB_LED", bool(d["rgb_led"]))):
@@ -1547,7 +1617,8 @@ default_profile: {soc}
 # constant it was derived from. A macro that disagrees with its constant
 # is the one mistake deriving them cannot rule out, because a sketch
 # reads the macro and the code beside it reads the constant.
-TIER0_MACROS = ("TINYM5_HAS_DISPLAY", "TINYM5_HAS_BACKLIGHT", "TINYM5_HAS_BATTERY",
+TIER0_MACROS = ("TINYM5_HAS_DISPLAY", "TINYM5_HAS_DISPLAY_DSI",
+                "TINYM5_HAS_BACKLIGHT", "TINYM5_HAS_BATTERY",
                 "TINYM5_HAS_INTERNAL_I2C", "TINYM5_HAS_EXTERNAL_I2C",
                 "TINYM5_HAS_RGB_LED", "TINYM5_HAS_BTN_A", "TINYM5_HAS_BTN_B",
                 "TINYM5_HAS_BTN_C", "TINYM5_HAS_BTN_PWR")
@@ -1623,6 +1694,8 @@ void setup()
         a("  Serial.println(Board.Backlight.get());\n")
     if d["has_display"]:
         a("  Serial.println(TINYM5_BOARD::display().width);\n")
+    if d["has_dsi"]:
+        a("  Serial.println(TINYM5_BOARD::displayDsi().laneCount);\n")
     a("}\n\nvoid loop()\n{\n  Board.update();\n")
     for name in ("A", "B", "C", "Pwr"):
         if name in d["buttons"]:

@@ -91,6 +91,8 @@
 #include "TinyM5BoardPaper.h"
 #elif defined(TINYM5_PAPERMONO)
 #include "TinyM5BoardPaperMono.h"
+#elif defined(TINYM5_COREP4X)
+#include "TinyM5BoardCoreP4X.h"
 #elif defined(TINYM5_STAMPPICO)
 #include "TinyM5BoardStampPico.h"
 #elif defined(TINYM5_STAMPS3)

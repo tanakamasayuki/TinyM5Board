@@ -29,6 +29,7 @@ enum class BoardId : uint16_t {
   StackChan = 27,
   PaperMono = 29,
   StopWatch = 30,
+  CoreP4X = 31,
   ChainCaptain = 32,
   AtomLite = 128,
   AtomU = 130,

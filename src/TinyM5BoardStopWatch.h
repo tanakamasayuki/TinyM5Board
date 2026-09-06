@@ -143,7 +143,7 @@ class TinyM5BoardStopWatch {
         /*mosi*/ 41, /*miso*/ 42, /*sclk*/ 40,
         /*dc*/ -1, /*cs*/ 39,
         /*io2*/ 46, /*io3*/ 45,
-        /*rst*/ -1,  // begin() has already pulsed it
+        /*rst*/ -1,  // this panel has no reset pin of its own
         /*busy*/ -1,
         /*freqWrite*/ 80000000, /*freqRead*/ 1000000,
         /*width*/ 468, /*height*/ 468,
@@ -179,6 +179,7 @@ class TinyM5BoardStopWatch {
 #define TINYM5_HAS_DISPLAY 1
 #define TINYM5_HAS_BACKLIGHT 0
 #define TINYM5_HAS_BATTERY 1
+#define TINYM5_HAS_DISPLAY_DSI 0
 #define TINYM5_HAS_INTERNAL_I2C 1
 #define TINYM5_HAS_EXTERNAL_I2C 1
 #define TINYM5_HAS_RGB_LED 0

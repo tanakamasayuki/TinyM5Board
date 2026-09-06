@@ -89,6 +89,29 @@ enum Init : uint8_t {
 enum class DisplayBus : uint8_t {
   Spi,
   QSpi,
+  /// MIPI-DSI. None of the pin fields mean anything here - the lanes
+  /// come out of the DSI peripheral rather than the GPIO matrix - and
+  /// what the panel needs instead is in DisplayDsi.
+  Dsi,
+};
+
+/// What a MIPI-DSI panel needs on top of the geometry in Display.
+///
+/// A second struct rather than more fields in the first one: none of
+/// this has an answer on an SPI panel, and the geometry questions have
+/// the same answer on both, so widening Display would put a dozen dead
+/// fields on thirty boards to serve one.
+struct DisplayDsi {
+  uint8_t busId;         ///< which DSI host, on a SoC that has more than one
+  uint8_t laneCount;     ///< data lanes actually wired
+  uint16_t laneMbps;     ///< per lane
+  uint8_t ldoChannel;    ///< the internal LDO that feeds the PHY
+  uint16_t ldoMillivolt;
+  uint8_t dpiFreqMhz;    ///< pixel clock
+  /// The blanking the glass was cut for. Board knowledge in the same way
+  /// an offset is: get one wrong and the picture rolls.
+  uint16_t hsyncBackPorch, hsyncPulseWidth, hsyncFrontPorch;
+  uint16_t vsyncBackPorch, vsyncPulseWidth, vsyncFrontPorch;
 };
 
 struct Display {

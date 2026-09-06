@@ -1,4 +1,4 @@
-// Tier 0 for the M5StackChan: does this header stand on its own?
+// Tier 0 for the M5CoreP4X: does this header stand on its own?
 //
 // Nothing here runs. What it proves is that the toolchain that ships the
 // code accepts this board's header for the SoC the board actually has,
@@ -14,7 +14,7 @@
 
 // Named by a macro rather than by an include. The begin() tests take the
 // direct include, so between the two tiers both spellings are covered.
-#define TINYM5_STACKCHAN
+#define TINYM5_COREP4X
 #include <TinyM5Board.h>
 
 TINYM5_BOARD Board;
@@ -33,7 +33,7 @@ TINYM5_BOARD Board;
 #error "TinyM5Board: a feature macro is missing. Portable sketches ask with #if, so one that is absent on a board is a sketch that stops being portable there."
 #endif
 
-static_assert(TINYM5_BOARD::kBoardId == TinyM5::BoardId::StackChan,
+static_assert(TINYM5_BOARD::kBoardId == TinyM5::BoardId::CoreP4X,
               "the entry point selected a different board");
 static_assert(TINYM5_BOARD::kFamily == TinyM5::Family::Core,
               "family does not match the catalogue");
@@ -69,6 +69,7 @@ void setup()
   Board.Backlight.set(128);
   Serial.println(Board.Backlight.get());
   Serial.println(TINYM5_BOARD::display().width);
+  Serial.println(TINYM5_BOARD::displayDsi().laneCount);
 }
 
 void loop()

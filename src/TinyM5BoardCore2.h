@@ -113,7 +113,7 @@ class TinyM5BoardCore2 {
         /*mosi*/ 23, /*miso*/ 38, /*sclk*/ 18,
         /*dc*/ 15, /*cs*/ 5,
         /*io2*/ -1, /*io3*/ -1,
-        /*rst*/ -1,  // begin() has already pulsed it
+        /*rst*/ -1,  // this panel has no reset pin of its own
         /*busy*/ -1,
         /*freqWrite*/ 40000000, /*freqRead*/ 16000000,
         /*width*/ 320, /*height*/ 240,
@@ -149,6 +149,7 @@ class TinyM5BoardCore2 {
 #define TINYM5_HAS_DISPLAY 1
 #define TINYM5_HAS_BACKLIGHT 1
 #define TINYM5_HAS_BATTERY 1
+#define TINYM5_HAS_DISPLAY_DSI 0
 #define TINYM5_HAS_INTERNAL_I2C 1
 #define TINYM5_HAS_EXTERNAL_I2C 1
 #define TINYM5_HAS_RGB_LED 1

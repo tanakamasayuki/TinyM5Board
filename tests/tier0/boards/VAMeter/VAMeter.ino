@@ -20,6 +20,7 @@
 TINYM5_BOARD Board;
 
 #if !defined(TINYM5_HAS_DISPLAY) \
+    || !defined(TINYM5_HAS_DISPLAY_DSI) \
     || !defined(TINYM5_HAS_BACKLIGHT) \
     || !defined(TINYM5_HAS_BATTERY) \
     || !defined(TINYM5_HAS_INTERNAL_I2C) \
