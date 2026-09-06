@@ -123,6 +123,7 @@ class TinyM5BoardStackChan {
         /*mosi*/ 37, /*miso*/ 35, /*sclk*/ 36,
         /*dc*/ 35, /*cs*/ 3,
         /*rst*/ -1,  // begin() has already pulsed it
+        /*busy*/ -1,
         /*freqWrite*/ 40000000, /*freqRead*/ 16000000,
         /*width*/ 320, /*height*/ 240,
         /*offsetX*/ 0, /*offsetY*/ 0,

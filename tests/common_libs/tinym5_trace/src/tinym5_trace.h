@@ -291,8 +291,9 @@ inline void finish()
   {
     const auto d = TINYM5_BOARD::display();
     line("--- display ---");
-    line("spi mosi=%d miso=%d sclk=%d dc=%d cs=%d rst=%d 3wire=%d sdcs=%d", d.mosi,
-         d.miso, d.sclk, d.dc, d.cs, d.rst, d.threeWire, TINYM5_BOARD::kSdSpiCs);
+    line("spi mosi=%d miso=%d sclk=%d dc=%d cs=%d rst=%d 3wire=%d sdcs=%d busy=%d",
+         d.mosi, d.miso, d.sclk, d.dc, d.cs, d.rst, d.threeWire,
+         TINYM5_BOARD::kSdSpiCs, d.busy);
     line("freq write=%u read=%u", (unsigned)d.freqWrite, (unsigned)d.freqRead);
     line("panel %ux%u offset=%u,%u rotation=%u invert=%d", d.width, d.height,
          d.offsetX, d.offsetY, d.rotation, d.invert);

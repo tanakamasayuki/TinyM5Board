@@ -81,6 +81,12 @@ enum Init : uint8_t {
 struct Display {
   int8_t mosi, miso, sclk, dc, cs;
   int8_t rst;  ///< always -1: begin() has already pulsed it. Do not touch
+  /// The panel's BUSY line, and -1 on the panels that do not have one.
+  /// Only the electrophoretic displays do: a refresh takes hundreds of
+  /// milliseconds and the controller holds this line while it runs.
+  /// begin() never waits on it - that is the driver's business - but the
+  /// pin is board knowledge and nothing else would report it.
+  int8_t busy;
   uint32_t freqWrite, freqRead;
   uint16_t width, height, offsetX, offsetY;
   uint8_t rotation;

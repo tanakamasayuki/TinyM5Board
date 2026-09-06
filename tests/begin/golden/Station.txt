@@ -25,7 +25,7 @@ name=M5Station id=9
 pins i2c=21/22 ext=32/33 led=4/1 hold=-1
 has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=0
 --- display ---
-spi mosi=23 miso=-1 sclk=18 dc=19 cs=5 rst=-1 3wire=1 sdcs=-1
+spi mosi=23 miso=-1 sclk=18 dc=19 cs=5 rst=-1 3wire=1 sdcs=-1 busy=-1
 freq write=40000000 read=15000000
 panel 135x240 offset=52,40 rotation=1 invert=1
 --- battery ---

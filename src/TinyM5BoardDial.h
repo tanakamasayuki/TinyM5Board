@@ -98,6 +98,7 @@ class TinyM5BoardDial {
         /*mosi*/ 5, /*miso*/ -1, /*sclk*/ 6,
         /*dc*/ 4, /*cs*/ 7,
         /*rst*/ -1,  // begin() has already pulsed it
+        /*busy*/ -1,
         /*freqWrite*/ 80000000, /*freqRead*/ 16000000,
         /*width*/ 240, /*height*/ 240,
         /*offsetX*/ 0, /*offsetY*/ 0,

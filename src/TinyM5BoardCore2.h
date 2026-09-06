@@ -112,6 +112,7 @@ class TinyM5BoardCore2 {
         /*mosi*/ 23, /*miso*/ 38, /*sclk*/ 18,
         /*dc*/ 15, /*cs*/ 5,
         /*rst*/ -1,  // begin() has already pulsed it
+        /*busy*/ -1,
         /*freqWrite*/ 40000000, /*freqRead*/ 16000000,
         /*width*/ 320, /*height*/ 240,
         /*offsetX*/ 0, /*offsetY*/ 0,

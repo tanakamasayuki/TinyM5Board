@@ -23,6 +23,7 @@ enum class BoardId : uint16_t {
   StampPLC = 21,
   StickS3 = 26,
   StackChan = 27,
+  PaperMono = 29,
   ChainCaptain = 32,
   AtomLite = 128,
   AtomU = 130,

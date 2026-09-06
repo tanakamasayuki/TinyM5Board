@@ -669,6 +669,63 @@ digitalWrite(21, LOW);
         sd_spi_cs=4,
     ),
     dict(
+        id="PaperMono",
+        name="M5PaperMono",
+        board_id=29,
+        family="Paper",
+        soc="esp32s3",
+        note="An 800x480 electrophoretic panel, and the first board here whose\n"
+             "screen is not an LCD. The bus is still plain SPI - what an EPD\n"
+             "adds is the BUSY line, GPIO 18, which the controller holds for\n"
+             "the hundreds of milliseconds a refresh takes.\n"
+             "An M5PM1 for power and an M5IOE1 for the rest: the panel's\n"
+             "supply, its reset, the touch layer and the card slot are all\n"
+             "expander pins. The front light is a PWM channel inside the\n"
+             "M5PM1 rather than a pin.\n"
+             "Its card is on a bus of its own, so nothing has to be quietened\n"
+             "before the panel is read.",
+        i2c_int=(47, 48),
+        i2c_ext=None,
+        power_hold=None,
+        rgb_led=None,
+        buttons={"A": 2, "B": 3, "Pwr": "pek"},
+        pmic="m5pm1",
+        rails=("Charge", "Dcdc5V", "Ldo3V3", "Led"),
+        io_expander="m5ioe1",
+        backlight=("m5pm1_pwm", "Ch0", "Io3", 5000),
+        display=dict(bus="spi2", mosi=14, miso=-1, sclk=15, dc=17, cs=16, rst=-1,
+                     busy=18,
+                     freq_write=40000000, freq_read=10000000,
+                     w=800, h=480, ox=0, oy=0, rotation=3, invert=False,
+                     three_wire=True),
+        power_on="""\
+// The panel's chip select is a real pin and has to be high before
+// anything else touches the bus. (M5GFX.cpp, the PaperMono branch)
+pinMode(16, OUTPUT);
+digitalWrite(16, HIGH);
+// Everything else the panel needs is on the expander: IO3 is its supply,
+// IO5 its reset, IO6 the touch layer's reset, IO13 the touch layer's
+// supply and IO14 the card slot's.
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io3);
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io13);
+Io.enableRail(TinyM5BoardIoExpanderM5ioe1::Io::Io14);
+Io.setPushPull(TinyM5BoardIoExpanderM5ioe1::Io::Io5);
+Io.setOutput(TinyM5BoardIoExpanderM5ioe1::Io::Io5);
+Io.setPushPull(TinyM5BoardIoExpanderM5ioe1::Io::Io6);
+Io.setOutput(TinyM5BoardIoExpanderM5ioe1::Io::Io6);
+// The panel and the touch layer come out of reset together.
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io5, false);
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io6, false);
+delay(8);
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io5, true);
+Io.write(TinyM5BoardIoExpanderM5ioe1::Io::Io6, true);
+delay(2);
+// The BUSY line is an input the driver polls. Nothing here waits on it,
+// but leaving the pin floating would make that first poll a coin toss.
+pinMode(18, INPUT);
+""",
+    ),
+    dict(
         id="StampPico",
         name="M5StampPico",
         board_id=133,
@@ -914,6 +971,8 @@ def emit_board(entry):
             a('#include "TinyM5Board/BacklightCore2.h"\n')
         elif b["backlight"][0] == "m5ioe1_pwm":
             a('#include "TinyM5Board/BacklightM5ioe1.h"\n')
+        elif b["backlight"][0] == "m5pm1_pwm":
+            a('#include "TinyM5Board/BacklightM5pm1.h"\n')
         elif b["backlight"][0] == "pi4io_switch":
             a('#include "TinyM5Board/BacklightPi4io.h"\n')
         elif b["backlight"][0].startswith("axp2101_"):
@@ -1033,6 +1092,11 @@ def emit_board(entry):
               f"  TinyM5BoardBacklightPi4io Backlight{{\n"
               f"      Io, TinyM5BoardIoExpanderPi4io::Io::{pin}, "
               f"{'true' if active_low else 'false'}}};\n\n")
+        elif b["backlight"][0] == "m5pm1_pwm":
+            _, ch, pin, hz = b["backlight"]
+            a(f"  TinyM5BoardBacklightM5pm1 Backlight{{\n"
+              f"      Power, TinyM5BoardPowerM5pm1::Pwm::{ch},\n"
+              f"      TinyM5BoardPowerM5pm1::Gpio::{pin}, {hz}}};\n\n")
         elif b["backlight"][0] == "m5ioe1_pwm":
             _, ch, pin, hz = b["backlight"]
             a(f"  TinyM5BoardBacklightM5ioe1 Backlight{{\n"
@@ -1150,6 +1214,7 @@ def emit_board(entry):
         a(f"        /*mosi*/ {dd['mosi']}, /*miso*/ {dd['miso']}, /*sclk*/ {dd['sclk']},\n")
         a(f"        /*dc*/ {dd['dc']}, /*cs*/ {dd['cs']},\n")
         a("        /*rst*/ -1,  // begin() has already pulsed it\n")
+        a(f"        /*busy*/ {dd.get('busy', -1)},\n")
         a(f"        /*freqWrite*/ {dd['freq_write']}, /*freqRead*/ {dd['freq_read']},\n")
         a(f"        /*width*/ {dd['w']}, /*height*/ {dd['h']},\n")
         a(f"        /*offsetX*/ {dd['ox']}, /*offsetY*/ {dd['oy']},\n")

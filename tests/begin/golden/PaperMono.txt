@@ -1,0 +1,90 @@
+--- begin() ---
+i2c0 begin sda=47 scl=48 hz=100000
+pinMode(2, INPUT_PULLUP)
+pinMode(3, INPUT_PULLUP)
+i2c0 write 0x6E [00] (no stop)
+i2c0 read  0x6E 4 -> [50 00 00 00]
+i2c0 write 0x6E [09 00]
+i2c0 write 0x6E [0A 00]
+i2c0 write 0x6E [06] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [06 17]
+i2c0 write 0x4F [00] (no stop)
+i2c0 read  0x4F 2 -> [01 00]
+i2c0 write 0x4F [23 00]
+pinMode(16, OUTPUT)
+digitalWrite(16, 1)
+i2c0 write 0x4F [13] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [13 00]
+i2c0 write 0x4F [03] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [03 04]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [05 04]
+i2c0 write 0x4F [14] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [14 00]
+i2c0 write 0x4F [04] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [04 10]
+i2c0 write 0x4F [06] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [06 10]
+i2c0 write 0x4F [14] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [14 00]
+i2c0 write 0x4F [04] (no stop)
+i2c0 read  0x4F 1 -> [10]
+i2c0 write 0x4F [04 30]
+i2c0 write 0x4F [06] (no stop)
+i2c0 read  0x4F 1 -> [10]
+i2c0 write 0x4F [06 30]
+i2c0 write 0x4F [13] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [13 00]
+i2c0 write 0x4F [03] (no stop)
+i2c0 read  0x4F 1 -> [04]
+i2c0 write 0x4F [03 14]
+i2c0 write 0x4F [13] (no stop)
+i2c0 read  0x4F 1 -> [00]
+i2c0 write 0x4F [13 00]
+i2c0 write 0x4F [03] (no stop)
+i2c0 read  0x4F 1 -> [14]
+i2c0 write 0x4F [03 34]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [04]
+i2c0 write 0x4F [05 04]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [04]
+i2c0 write 0x4F [05 04]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [04]
+i2c0 write 0x4F [05 14]
+i2c0 write 0x4F [05] (no stop)
+i2c0 read  0x4F 1 -> [14]
+i2c0 write 0x4F [05 34]
+pinMode(18, INPUT)
+i2c0 write 0x6E [13] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [13 00]
+i2c0 write 0x6E [16] (no stop)
+i2c0 read  0x6E 1 -> [00]
+i2c0 write 0x6E [16 C0]
+i2c0 write 0x6E [34 88 13]
+i2c0 write 0x6E [30 00 14]
+--- board ---
+name=M5PaperMono id=29
+pins i2c=47/48 ext=-1/-1 led=-1/0 hold=-1
+has display=1 backlight=1 battery=1 intI2c=1 extI2c=0 shared=0
+--- display ---
+spi mosi=14 miso=-1 sclk=15 dc=17 cs=16 rst=-1 3wire=1 sdcs=-1 busy=18
+freq write=40000000 read=10000000
+panel 800x480 offset=0,0 rotation=3 invert=0
+--- battery ---
+i2c0 write 0x6E [22] (no stop)
+i2c0 read  0x6E 2 -> [A0 0F]
+i2c0 write 0x6E [22] (no stop)
+i2c0 read  0x6E 2 -> [A0 0F]
+mV=4000 level=87

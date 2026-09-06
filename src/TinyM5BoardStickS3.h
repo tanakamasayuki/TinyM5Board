@@ -110,6 +110,7 @@ class TinyM5BoardStickS3 {
         /*mosi*/ 39, /*miso*/ -1, /*sclk*/ 40,
         /*dc*/ 45, /*cs*/ 41,
         /*rst*/ -1,  // begin() has already pulsed it
+        /*busy*/ -1,
         /*freqWrite*/ 40000000, /*freqRead*/ 16000000,
         /*width*/ 135, /*height*/ 240,
         /*offsetX*/ 52, /*offsetY*/ 40,

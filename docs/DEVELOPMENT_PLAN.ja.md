@@ -4,7 +4,7 @@
 
 ## 1. 現在地
 
-**28 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
+**29 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
 実物のツールチェーンのビルド（Tier 0）まで通っている。SoC は esp32 / S3 /
 C3 / C6 / H2 の 5 種類。**
 
@@ -12,14 +12,14 @@ C3 / C6 / H2 の 5 種類。**
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **28 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / **Dial** / **DinMeter** |
+| ボード定義 | **29 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / Dial / DinMeter、Paper: **PaperMono** |
 | 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
 | IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / **`IoExpanderPi4io`**。**主要 3 種が揃った** |
-| バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / **AXP2101 (Bldo1・Dldo1)** / Core2 / M5IOE1 の PWM。**すべて M5GFX と同じカーブ** |
+| バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / AXP2101 (Bldo1・Dldo1) / Core2 / M5IOE1 の PWM / **M5PM1 の PWM**。**すべて M5GFX と同じカーブ** |
 | ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。**click / hold / click カウントまで M5Unified と同じ状態機械**（D36） |
-| 表示 | `TinyM5::Display`。3 線式と PMIC 越しリセットの表現あり |
-| `tests/begin/` | **29 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
-| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（28 機種 + 入口 2 本 / 5 種類の SoC） |
+| 表示 | `TinyM5::Display`。3 線式・PMIC 越しリセット・**EPD の BUSY** の表現あり |
+| `tests/begin/` | **30 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
+| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（29 機種 + 入口 2 本 / 5 種類の SoC） |
 | `tests/unit/` | **ボード非依存のクラス**の検査。Button の状態機械と SD のモード落とし（39 + 13 検査 / 約 16 秒） |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` は別ジョブ |
 | I2C | 内部 / 外部の 2 本。**内部を持たない module では Grove が `Wire`**（D37） |
@@ -71,12 +71,12 @@ C3 / C6 / H2 の 5 種類。**
 ### 1.3 テストの所要時間
 
 `tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
-**1 スケッチ約 9 秒**（実測）なので 29 本で 4 分台。**群ごとに並列化してある**ので
+**1 スケッチ約 10 秒**（実測）なので 30 本で 5 分台。**群ごとに並列化してある**ので
 CI では最長の群の時間で済み、ローカルは `pytest begin/Stick` のように絞れる
 （4 機種で約 30 秒 / 実測）。
 
-`tests/tier0` は 30 本ビルドして**約 2 分半**、`tests/unit` は 2 本で**約 16 秒**。
-**全部で 8 分 26 秒**（28 機種 / ローカル実測）。
+`tests/tier0` は 31 本ビルドして**約 2 分半**、`tests/unit` は 2 本で**約 16 秒**。
+**全部で 8 分 16 秒**（29 機種 / ローカル実測）。
 どちらも機種数に線形だが、実行が無い分だけ安い。
 ボード非依存の変更は `unit` だけ回せばよい。
 
@@ -215,16 +215,17 @@ M5GFX の該当分岐を読んだ結果（2026-09-06 の master）。
 
 | 機種 | バス | いまの構造体に足りないもの |
 | --- | --- | --- |
-| **PaperMono** (EPD) | **素の SPI** —— mosi 14 / sclk 15 / dc 17 / cs 16 / 3wire | **`busy` ピン 1 本だけ**（GPIO18） |
-| M5Paper / PaperS3 / PaperColor (EPD) | 同上 | 同じく `busy` |
+| ~~**PaperMono** (EPD)~~ | **素の SPI** —— mosi 14 / sclk 15 / dc 17 / cs 16 / 3wire | ~~`busy` ピン 1 本~~ **—— 足して通した** |
+| M5Paper / PaperS3 / PaperColor (EPD) | 同上 | **もう届く。** ピンを書くだけ |
 | **StopWatch** (AMOLED) | **QSPI** —— io0 41 / io1 42 / io2 46 / io3 45 / sclk 40 / cs 39 | **バスの種別**と **`io2` `io3` の 2 本**。io0 / io1 は mosi / miso と同じ線 |
 | **CoreP4X** | **MIPI-DSI** | レーン数・タイミング一式。**構造体を広げる話ではない** |
 | CoreMatrix | LED マトリクス (I2C) | そもそもフレームバッファのパネルではない |
 
 **提案（暫定）**:
 
-1. **EPD は `busy` を 1 列足すだけで届く。** 電源側は M5PM1 + M5IOE1 で
-   もう通っているので、PaperMono は**その 1 本と、エキスパンダの手順**で入る
+1. ~~**EPD は `busy` を 1 列足すだけで届く。**~~ —— **そのとおりだった。**
+   `Display::busy` を足し、PaperMono を通した（D39）。M5Paper / PaperS3 /
+   PaperColor はピンを書くだけで入る
 2. **QSPI は `bus` タグ + `io2` / `io3`。** `Display` に 3 フィールド足りるが、
    **タグが要る**のは「mosi / miso を io0 / io1 として読み替える」ことを
    受け取り側が知る必要があるため
@@ -232,9 +233,9 @@ M5GFX の該当分岐を読んだ結果（2026-09-06 の master）。
    届く機種が来たときに `displayDsi()` のような別の窓口にする
 4. **LED マトリクスは表示として持たない。** ピンを出すだけにする
 
-**いまは足さない。** 使うボードが 1 機種も入っていない列を先に作ると、
-検証できない構造が残る（D4 の停止則）。**PaperMono か StopWatch を入れるとき、
-その機種と一緒に足す。**
+**残りはいまは足さない。** 使うボードが 1 機種も入っていない列を先に作ると、
+検証できない構造が残る（D4 の停止則）。**StopWatch を入れるときに QSPI を、
+CoreP4X が来たときに DSI の窓口を足す。**
 
 ### 2-6. ~~host-arduino-core への要望~~ —— 1.6.0 で解決
 

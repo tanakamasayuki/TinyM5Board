@@ -105,6 +105,7 @@ class TinyM5BoardStickCPlus2 {
         /*mosi*/ 15, /*miso*/ -1, /*sclk*/ 13,
         /*dc*/ 14, /*cs*/ 5,
         /*rst*/ -1,  // begin() has already pulsed it
+        /*busy*/ -1,
         /*freqWrite*/ 40000000, /*freqRead*/ 15000000,
         /*width*/ 135, /*height*/ 240,
         /*offsetX*/ 52, /*offsetY*/ 40,

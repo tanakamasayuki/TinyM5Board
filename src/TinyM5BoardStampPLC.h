@@ -129,6 +129,7 @@ class TinyM5BoardStampPLC {
         /*mosi*/ 8, /*miso*/ 9, /*sclk*/ 7,
         /*dc*/ 6, /*cs*/ 12,
         /*rst*/ -1,  // begin() has already pulsed it
+        /*busy*/ -1,
         /*freqWrite*/ 40000000, /*freqRead*/ 16000000,
         /*width*/ 135, /*height*/ 240,
         /*offsetX*/ 52, /*offsetY*/ 40,

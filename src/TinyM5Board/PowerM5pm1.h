@@ -197,9 +197,51 @@ class TinyM5BoardPowerM5pm1 {
     delay(settleMs);
   }
 
+  // ---- the chip's PWM ----
+  //
+  // Two channels, and which pin each drives is fixed by the chip: PWM0 is
+  // IO3 and PWM1 is IO4. One frequency generator feeds both, so they
+  // cannot run at different rates.
+
+  enum class Pwm : uint8_t { Ch0 = 0, Ch1 = 1 };
+
+  /// Hand a pin to the PWM block. Same two bits per pin as
+  /// gpioFunctionGpio, set rather than cleared.
+  void gpioFunctionPwm(Gpio gpio)
+  {
+    _reg.bitOn(0x16, (uint8_t)(0b11 << ((uint8_t)gpio * 2)));
+  }
+
+  /// Hertz, straight into PWM_FREQ_L/H. Shared by both channels.
+  void setPwmFrequency(uint16_t hz)
+  {
+    const uint8_t buf[2] = {(uint8_t)(hz & 0xFF), (uint8_t)(hz >> 8)};
+    _reg.write(0x34, buf, sizeof(buf));
+  }
+
+  /// 12-bit duty. The enable bit sits in the same register as the top
+  /// nibble, so it goes out in the same write.
+  void setPwmDuty(Pwm channel, uint16_t duty12)
+  {
+    const uint8_t buf[2] = {(uint8_t)(duty12 & 0xFF),
+                            (uint8_t)(((duty12 >> 8) & 0x0F) | kPwmEnable)};
+    _reg.write(pwmReg(channel), buf, sizeof(buf));
+  }
+
+  /// Stop the channel. A duty of zero leaves the block running and the
+  /// pin driven, which is not what off means for a backlight.
+  void setPwmOff(Pwm channel) { _reg.write8((uint8_t)(pwmReg(channel) + 1), 0); }
+
   TinyM5::I2cReg &reg() { return _reg; }
 
  private:
+  static constexpr uint8_t kPwmEnable = 0x10;  ///< PWMn_HC bit 4
+
+  static constexpr uint8_t pwmReg(Pwm channel)
+  {
+    return (uint8_t)(0x30 + (uint8_t)channel * 2);
+  }
+
   // Not called `bit`: Arduino.h defines that as a macro, and a member
   // function of the same name is rewritten by the preprocessor before the
   // compiler ever sees it.
