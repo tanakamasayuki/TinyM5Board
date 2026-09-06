@@ -53,6 +53,8 @@
 #include "TinyM5BoardAirQ.h"
 #elif defined(TINYM5_CARDPUTER)
 #include "TinyM5BoardCardputer.h"
+#elif defined(TINYM5_CARDPUTERADV)
+#include "TinyM5BoardCardputerADV.h"
 #elif defined(TINYM5_VAMETER)
 #include "TinyM5BoardVAMeter.h"
 #elif defined(TINYM5_NESSON1)

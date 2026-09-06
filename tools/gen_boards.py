@@ -337,6 +337,30 @@ digitalWrite(2, LOW);
         power_on="",
     ),
     dict(
+        id="CardputerADV",
+        name="M5CardputerADV",
+        board_id=24,
+        family="Other",
+        soc="esp32s3",
+        note="The Cardputer with an internal I2C bus of its own on GPIO 8/9,\n"
+             "where the plain one has only the Grove port. Same panel, same\n"
+             "button, same battery; upstream tells the two apart by probing\n"
+             "those pins.",
+        i2c_int=(8, 9),
+        i2c_ext=(2, 1),
+        power_hold=None,
+        rgb_led=(21, 1),
+        buttons={"A": 0},
+        pmic="adc",
+        bat_adc=(10, 2000),
+        backlight=("pwm", 38, 256, 16),
+        display=dict(bus="spi", mosi=35, miso=-1, sclk=36, dc=34, cs=37, rst=33,
+                     freq_write=40000000, freq_read=16000000,
+                     w=135, h=240, ox=52, oy=40, rotation=0, invert=True,
+                     three_wire=True),
+        power_on="",
+    ),
+    dict(
         id="VAMeter",
         name="M5VAMeter",
         board_id=16,

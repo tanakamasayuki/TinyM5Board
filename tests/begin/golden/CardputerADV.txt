@@ -1,0 +1,20 @@
+--- begin() ---
+i2c0 begin sda=8 scl=9 hz=100000
+i2c1 begin sda=2 scl=1 hz=100000
+pinMode(0, INPUT_PULLUP)
+pinMode(33, OUTPUT)
+digitalWrite(33, 1)
+digitalWrite(33, 0)
+digitalWrite(33, 1)
+pwm attach pin=38 ch=0 freq=256 res=9
+pwm write  pin=38 duty=273
+--- board ---
+name=M5CardputerADV id=24
+pins i2c=8/9 ext=2/1 led=21/1 hold=-1
+has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=0
+--- display ---
+bus=spi mosi=35 miso=-1 io2=-1 io3=-1 sclk=36 dc=34 cs=37 rst=-1 3wire=1 sdcs=-1 busy=-1
+freq write=40000000 read=16000000
+panel 135x240 offset=52,40 rotation=0 invert=1
+--- battery ---
+mV=4000 level=87

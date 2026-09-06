@@ -27,7 +27,7 @@ GitHub Actions の matrix の軸で、ローカルでも同じ単位で絞れる
 
 ```sh
 uv run pytest begin/Stick --profile host    # 4 機種、約 30 秒
-uv run pytest begin --profile host          # 38 スケッチ、約 6 分
+uv run pytest begin --profile host          # 39 スケッチ、約 6 分半
 ```
 
 1 本ごとにスケッチをビルドして実行するので、**所要時間は機種数に線形**。
