@@ -812,6 +812,35 @@ pinMode(38, INPUT_PULLUP);
 """,
     ),
     dict(
+        id="CoreInk",
+        name="M5StackCoreInk",
+        board_id=6,
+        family="Paper",
+        soc="esp32",
+        note="A 200x200 electrophoretic panel on a classic ESP32, and the\n"
+             "board with the most buttons here: A/B/C on the front, an EXT on\n"
+             "GPIO 5 and a power key on GPIO 27 - a pin rather than a PMIC\n"
+             "register on this one.\n"
+             "Two controllers have shipped under the name, a GDEW0154D67 and a\n"
+             "GDEW0154M09, with the same pins and size.\n"
+             "Its divider is 25.1/5.1, which is neither of the two ratios the\n"
+             "other ADC boards use.",
+        i2c_int=(21, 22),
+        i2c_ext=(32, 33),
+        power_hold=12,
+        rgb_led=None,
+        buttons={"A": 37, "B": 38, "C": 39, "Ext": 5, "Pwr": 27},
+        pmic="adc",
+        bat_adc=(35, 4922),
+        backlight=None,
+        display=dict(bus="spi", mosi=23, miso=34, sclk=18, dc=15, cs=9, rst=0,
+                     busy=4,
+                     freq_write=40000000, freq_read=16000000,
+                     w=200, h=200, ox=0, oy=0, rotation=0, invert=False,
+                     three_wire=True),
+        power_on="",
+    ),
+    dict(
         id="Paper",
         name="M5Paper",
         board_id=7,
@@ -1148,6 +1177,17 @@ def derive(b):
                              "comes back on that wire")
     d["classic"] = soc["classic"]
     return d
+
+
+def button_names():
+    """Every button name in the catalogue.
+
+    Every board defines a macro for every one of them, including the
+    ones it does not have. A sketch that asks about a button only the
+    CoreInk carries has to get an answer on the other thirty-four rather
+    than a preprocessor error.
+    """
+    return sorted({name for b in BOARDS for name in b.get("buttons", {})})
 
 
 def button_pin(spec):
@@ -1514,7 +1554,7 @@ def emit_board(entry):
     # Buttons vary more than anything else: the Tough has none at all (its
     # A/B/C are touch zones), the Stick has a power key inside the PMIC,
     # the Station has three. A portable sketch has to ask.
-    for name in ("A", "B", "C", "Pwr"):
+    for name in button_names():
         a(f"#define TINYM5_HAS_BTN_{name.upper()} {1 if name in d['buttons'] else 0}\n")
     a("\n")
 
@@ -1620,13 +1660,14 @@ default_profile: {soc}
 TIER0_MACROS = ("TINYM5_HAS_DISPLAY", "TINYM5_HAS_DISPLAY_DSI",
                 "TINYM5_HAS_BACKLIGHT", "TINYM5_HAS_BATTERY",
                 "TINYM5_HAS_INTERNAL_I2C", "TINYM5_HAS_EXTERNAL_I2C",
-                "TINYM5_HAS_RGB_LED", "TINYM5_HAS_BTN_A", "TINYM5_HAS_BTN_B",
-                "TINYM5_HAS_BTN_C", "TINYM5_HAS_BTN_PWR")
+                "TINYM5_HAS_RGB_LED")
 
 
 def emit_tier0(b):
     d = derive(b)
-    cond = " \\\n    || ".join(f"!defined({m})" for m in TIER0_MACROS)
+    macros = TIER0_MACROS + tuple(f"TINYM5_HAS_BTN_{n.upper()}"
+                                  for n in button_names())
+    cond = " \\\n    || ".join(f"!defined({m})" for m in macros)
     o = [f"""// Tier 0 for the {b["name"]}: does this header stand on its own?
 //
 // Nothing here runs. What it proves is that the toolchain that ships the
@@ -1697,7 +1738,7 @@ void setup()
     if d["has_dsi"]:
         a("  Serial.println(TINYM5_BOARD::displayDsi().laneCount);\n")
     a("}\n\nvoid loop()\n{\n  Board.update();\n")
-    for name in ("A", "B", "C", "Pwr"):
+    for name in button_names():
         if name in d["buttons"]:
             a(f"  if (Board.Btn{name}.wasClicked() || Board.Btn{name}.wasDoubleClicked()\n")
             a(f"      || Board.Btn{name}.wasHold()) {{\n")

@@ -156,6 +156,7 @@ class TinyM5BoardCore2 {
 #define TINYM5_HAS_BTN_A 0
 #define TINYM5_HAS_BTN_B 0
 #define TINYM5_HAS_BTN_C 0
+#define TINYM5_HAS_BTN_EXT 0
 #define TINYM5_HAS_BTN_PWR 1
 
 // The board this sketch drives, written once so that portable code can

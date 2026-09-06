@@ -154,6 +154,7 @@ class TinyM5BoardStickS3 {
 #define TINYM5_HAS_BTN_A 1
 #define TINYM5_HAS_BTN_B 1
 #define TINYM5_HAS_BTN_C 0
+#define TINYM5_HAS_BTN_EXT 0
 #define TINYM5_HAS_BTN_PWR 1
 
 // The board this sketch drives, written once so that portable code can

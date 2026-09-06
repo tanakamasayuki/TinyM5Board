@@ -107,6 +107,7 @@ class TinyM5BoardAtomMatrix {
 #define TINYM5_HAS_BTN_A 1
 #define TINYM5_HAS_BTN_B 0
 #define TINYM5_HAS_BTN_C 0
+#define TINYM5_HAS_BTN_EXT 0
 #define TINYM5_HAS_BTN_PWR 0
 
 // The board this sketch drives, written once so that portable code can

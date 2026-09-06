@@ -1,4 +1,4 @@
-// Tier 0 for the M5StickC Plus2: does this header stand on its own?
+// Tier 0 for the M5StackCoreInk: does this header stand on its own?
 //
 // Nothing here runs. What it proves is that the toolchain that ships the
 // code accepts this board's header for the SoC the board actually has,
@@ -14,7 +14,7 @@
 
 // Named by a macro rather than by an include. The begin() tests take the
 // direct include, so between the two tiers both spellings are covered.
-#define TINYM5_STICKCPLUS2
+#define TINYM5_COREINK
 #include <TinyM5Board.h>
 
 TINYM5_BOARD Board;
@@ -34,9 +34,9 @@ TINYM5_BOARD Board;
 #error "TinyM5Board: a feature macro is missing. Portable sketches ask with #if, so one that is absent on a board is a sketch that stops being portable there."
 #endif
 
-static_assert(TINYM5_BOARD::kBoardId == TinyM5::BoardId::StickCPlus2,
+static_assert(TINYM5_BOARD::kBoardId == TinyM5::BoardId::CoreInk,
               "the entry point selected a different board");
-static_assert(TINYM5_BOARD::kFamily == TinyM5::Family::Stick,
+static_assert(TINYM5_BOARD::kFamily == TinyM5::Family::Paper,
               "family does not match the catalogue");
 
 // Macro against constant, for every flag that has a constant to compare
@@ -66,8 +66,6 @@ void setup()
   Serial.println(Board.getBoardName());
   Serial.println(Board.Power.getBatteryVoltage());
   Serial.println((int)Board.Power.getType());
-  Board.Backlight.set(128);
-  Serial.println(Board.Backlight.get());
   Serial.println(TINYM5_BOARD::display().width);
 }
 
@@ -81,6 +79,14 @@ void loop()
   if (Board.BtnB.wasClicked() || Board.BtnB.wasDoubleClicked()
       || Board.BtnB.wasHold()) {
     Serial.println(Board.BtnB.getClickCount());
+  }
+  if (Board.BtnC.wasClicked() || Board.BtnC.wasDoubleClicked()
+      || Board.BtnC.wasHold()) {
+    Serial.println(Board.BtnC.getClickCount());
+  }
+  if (Board.BtnExt.wasClicked() || Board.BtnExt.wasDoubleClicked()
+      || Board.BtnExt.wasHold()) {
+    Serial.println(Board.BtnExt.getClickCount());
   }
   if (Board.BtnPwr.wasClicked() || Board.BtnPwr.wasDoubleClicked()
       || Board.BtnPwr.wasHold()) {

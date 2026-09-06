@@ -29,6 +29,7 @@ TINYM5_BOARD Board;
     || !defined(TINYM5_HAS_BTN_A) \
     || !defined(TINYM5_HAS_BTN_B) \
     || !defined(TINYM5_HAS_BTN_C) \
+    || !defined(TINYM5_HAS_BTN_EXT) \
     || !defined(TINYM5_HAS_BTN_PWR)
 #error "TinyM5Board: a feature macro is missing. Portable sketches ask with #if, so one that is absent on a board is a sketch that stops being portable there."
 #endif

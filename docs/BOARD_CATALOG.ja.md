@@ -88,6 +88,7 @@ TinyGFX の `panels/` と同じ規律（[DECISIONS.ja.md](DECISIONS.ja.md) 参�
 | 列 | 例 |
 | --- | --- |
 | `buttons` | `{A: 37, B: 39, Pwr: 35}` —— 既定は active-low。極性が違うなら `(pin, False)` |
+| | 名前は**自由**。`TINYM5_HAS_BTN_<名前>` は**カタログに出てくる名前の集合**から生成され、**全機種が全部の名前を定義する**（CoreInk の `Ext` を他の 35 機種が `0` で答える） |
 | | `{Pwr: "pek"}` —— **ピンが無い。** 電源チップの中のキーを I2C で読む |
 
 `"pek"` は StickC / StickC Plus のためにある。**隣り合う機種で、同じ「電源ボタン」が
