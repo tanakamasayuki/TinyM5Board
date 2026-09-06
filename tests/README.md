@@ -7,7 +7,7 @@ cd tests
 uv sync
 uv run pytest --profile host          # everything
 uv run pytest unit --profile host     # the board independent classes, ~16s
-uv run pytest tier0                   # every header, real toolchain, ~2.5 min
+uv run pytest tier0                   # every header, real toolchain, ~3 min
 uv run pytest begin --profile host    # the bring-up goldens, ~4-5 min
 ```
 
@@ -22,7 +22,7 @@ axis and what you select on locally:
 
 ```sh
 uv run pytest begin/Stick --profile host    # 4 boards, about 30 seconds
-uv run pytest begin --profile host          # 32 sketches, about 5 minutes
+uv run pytest begin --profile host          # 34 sketches, about 6 minutes
 ```
 
 Each one builds and runs its own sketch, so the wall clock grows with the

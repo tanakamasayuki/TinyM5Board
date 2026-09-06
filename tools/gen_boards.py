@@ -283,6 +283,57 @@ digitalWrite(2, LOW);
         power_on="",
     ),
     dict(
+        id="Cardputer",
+        name="M5Cardputer",
+        board_id=14,
+        family="Other",
+        soc="esp32s3",
+        note="A keyboard with a screen. No internal I2C bus - the Grove port is\n"
+             "the only one - and the card is on a bus of its own, so nothing\n"
+             "has to be quietened before the panel.\n"
+             "The keyboard is a matrix behind a 74HC138 on GPIO 8/9 and read\n"
+             "through GPIO 5/6/7. That is a device driver's job; what this\n"
+             "header carries is the panel, the button and the battery.",
+        i2c_int=None,
+        i2c_ext=(2, 1),
+        power_hold=None,
+        rgb_led=(21, 1),
+        buttons={"A": 0},
+        pmic="adc",
+        bat_adc=(10, 2000),
+        backlight=("pwm", 38, 256, 16),
+        display=dict(bus="spi", mosi=35, miso=-1, sclk=36, dc=34, cs=37, rst=33,
+                     freq_write=40000000, freq_read=16000000,
+                     w=135, h=240, ox=52, oy=40, rotation=0, invert=True,
+                     three_wire=True),
+        power_on="",
+    ),
+    dict(
+        id="VAMeter",
+        name="M5VAMeter",
+        board_id=16,
+        family="Other",
+        soc="esp32s3",
+        note="A volt and current meter with a square screen. Same panel bus as\n"
+             "the Cardputer - upstream tells the two apart by probing GPIO 5\n"
+             "and 6 - but 240x240 rather than 135x240, and a different\n"
+             "backlight curve.\n"
+             "No battery: it runs from what it is measuring. The INA-style\n"
+             "sensors on the internal bus are devices, not bring-up.",
+        i2c_int=(5, 6),
+        i2c_ext=(8, 9),
+        power_hold=None,
+        rgb_led=None,
+        buttons={"A": 2, "B": 0},
+        pmic=None,
+        backlight=("pwm", 38, 512, 64),
+        display=dict(bus="spi", mosi=35, miso=-1, sclk=36, dc=34, cs=37, rst=33,
+                     freq_write=40000000, freq_read=16000000,
+                     w=240, h=240, ox=0, oy=0, rotation=0, invert=True,
+                     three_wire=True),
+        power_on="",
+    ),
+    dict(
         id="Dial",
         name="M5Dial",
         board_id=12,

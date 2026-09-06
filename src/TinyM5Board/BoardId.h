@@ -19,6 +19,8 @@ enum class BoardId : uint16_t {
   Dial = 12,
   DinMeter = 13,
   StickCPlus = 13,
+  Cardputer = 14,
+  VAMeter = 16,
   StickCPlus2 = 17,
   CoreS3SE = 17,
   StampPLC = 21,

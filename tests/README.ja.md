@@ -11,7 +11,7 @@ cd tests
 uv sync
 uv run pytest --profile host          # 全部
 uv run pytest unit --profile host     # ボードに依らないクラス。約 16 秒
-uv run pytest tier0                   # 全機種のヘッダを実物のコアで。約 2 分半
+uv run pytest tier0                   # 全機種のヘッダを実物のコアで。約 3 分
 uv run pytest begin --profile host    # 立ち上げのゴールデン。約 4〜5 分
 ```
 
@@ -26,7 +26,7 @@ GitHub Actions の matrix の軸で、ローカルでも同じ単位で絞れる
 
 ```sh
 uv run pytest begin/Stick --profile host    # 4 機種、約 30 秒
-uv run pytest begin --profile host          # 32 スケッチ、約 5 分
+uv run pytest begin --profile host          # 34 スケッチ、約 6 分
 ```
 
 1 本ごとにスケッチをビルドして実行するので、**所要時間は機種数に線形**。

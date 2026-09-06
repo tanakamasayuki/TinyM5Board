@@ -1,0 +1,19 @@
+--- begin() ---
+i2c0 begin sda=5 scl=6 hz=100000
+i2c1 begin sda=8 scl=9 hz=100000
+pinMode(2, INPUT_PULLUP)
+pinMode(0, INPUT_PULLUP)
+pinMode(33, OUTPUT)
+digitalWrite(33, 1)
+digitalWrite(33, 0)
+digitalWrite(33, 1)
+pwm attach pin=38 ch=0 freq=512 res=9
+pwm write  pin=38 duty=321
+--- board ---
+name=M5VAMeter id=16
+pins i2c=5/6 ext=8/9 led=-1/0 hold=-1
+has display=1 backlight=1 battery=0 intI2c=1 extI2c=1 shared=0
+--- display ---
+bus=spi mosi=35 miso=-1 io2=-1 io3=-1 sclk=36 dc=34 cs=37 rst=-1 3wire=1 sdcs=-1 busy=-1
+freq write=40000000 read=16000000
+panel 240x240 offset=0,0 rotation=0 invert=1
