@@ -4,7 +4,7 @@
 
 ## 1. 現在地
 
-**33 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
+**34 機種。ADC / AXP192 / AXP2101 / M5PM1 の 4 系統が、ホストのゴールデンと
 実物のツールチェーンのビルド（Tier 0）まで通っている。SoC は esp32 / S3 /
 C3 / C6 / H2 の 5 種類。**
 
@@ -12,14 +12,14 @@ C3 / C6 / H2 の 5 種類。**
 | --- | --- |
 | 責務・設計・決定の文書化 | **一巡した**（[README.ja.md](README.ja.md) の一覧） |
 | `tools/gen_boards.py` | ボードヘッダ / 入口 / `BoardId.h` / テスト一式を生成、`--check` と `--families` |
-| ボード定義 | **33 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / Dial / DinMeter / StopWatch / **Cardputer** / **VAMeter**、Paper: PaperMono / **Paper** |
+| ボード定義 | **34 機種** —— Atom: AtomLite / AtomMatrix / AtomU / AtomVoice / AtomS3Lite / AtomS3U、Core: Core2 / Tough / Station / ChainCaptain / CoreS3 / CoreS3SE / StackChan、Stick: StickC / StickCPlus / StickCPlus2 / StickS3、Stamp: StampPico / **StampS3** / **StampC3** / **StampC3U** / StampPLC、Other: TimerCam / Capsule / NanoC6 / NanoH2 / Dial / DinMeter / StopWatch / Cardputer / VAMeter / **AirQ**、Paper: PaperMono / **Paper** |
 | 電源 | `PowerAdc` / `PowerAxp192` / `PowerAxp2101` / `PowerM5pm1` / `PowerCore2`（二択の判別） |
 | IO エキスパンダ | `IoExpanderM5ioe1` / `IoExpanderAw9523` / **`IoExpanderPi4io`**。**主要 3 種が揃った** |
 | バックライト | PWM / AXP192 (Ldo2・Ldo3・Dc3) / AXP2101 (Bldo1・Dldo1) / Core2 / M5IOE1 の PWM / **M5PM1 の PWM**。**すべて M5GFX と同じカーブ** |
 | ボタン | GPIO / PMIC の電源キー / **IO エキスパンダのピン**を同じ型で。**click / hold / click カウントまで M5Unified と同じ状態機械**（D36） |
 | 表示 | `TinyM5::Display`。3 線式・PMIC 越しリセット・EPD の BUSY・**QSPI の 4 本**の表現あり |
-| `tests/begin/` | **34 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
-| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（33 機種 + 入口 2 本 / 5 種類の SoC） |
+| `tests/begin/` | **35 スケッチ通過**（Core2 が二択で 2 本）**。群ごとのディレクトリ**で、CI の matrix 軸もこれ。1 バスに複数チップのモデルに対応 |
+| `tests/tier0/` | **全機種のヘッダを実物のコアでビルド**。マクロと定数の一致を `static_assert` で（34 機種 + 入口 2 本 / 5 種類の SoC） |
 | `tests/unit/` | **ボード非依存のクラス**の検査。Button の状態機械と SD のモード落とし（39 + 13 検査 / 約 16 秒） |
 | `.github/workflows/tests.yml` | **群ごとに並列**。軸はカタログから生成。`unit` / `tier0` は別ジョブ |
 | I2C | 内部 / 外部の 2 本。**内部を持たない module では Grove が `Wire`**（D37） |
@@ -71,16 +71,16 @@ C3 / C6 / H2 の 5 種類。**
 ### 1.3 テストの所要時間
 
 `tests/begin` は 1 本ごとにスケッチをビルドして実行するので、**機種数に線形**。
-**1 スケッチ約 10 秒**（実測）なので 34 本で 6 分近い。**群ごとに並列化してある**ので
+**1 スケッチ約 10 秒**（実測）なので 35 本で 6 分近い。**群ごとに並列化してある**ので
 CI では最長の群の時間で済み、ローカルは `pytest begin/Stick` のように絞れる
 （4 機種で約 30 秒 / 実測）。
 
-`tests/tier0` は 35 本ビルドして**約 3 分**、`tests/unit` は 2 本で**約 16 秒**。
-**全部で 9 分 41 秒**（33 機種 / ローカル実測）。
+`tests/tier0` は 36 本ビルドして**約 3 分**、`tests/unit` は 2 本で**約 16 秒**。
+**全部で 8 分 22 秒**（34 機種 / ローカル実測。負荷で 1〜2 分は振れる）。
 どちらも機種数に線形だが、実行が無い分だけ安い。
 ボード非依存の変更は `unit` だけ回せばよい。
 
-**いまの最長は Other 群の 10 スケッチ。** Dial / DinMeter / Cardputer / VAMeter /
+**いまの最長は Other 群の 11 スケッチ。** Dial / DinMeter / Cardputer / VAMeter /
 StopWatch のように「群に収まらない製品」が全部ここに落ちるので、今後も伸びる。
 **軸を群からボード単位に落とす**時期が近い（生成できるので workflow は変わらない）。
 
@@ -237,9 +237,33 @@ M5GFX の該当分岐を読んだ結果（2026-09-06 の master）。
 検証できない構造が残る（D4 の停止則）。**CoreP4X が来たときに DSI の窓口を足す。**
 LED マトリクスは表示として持たない方針のまま。
 
-### 2-9. PaperS3 / PaperColor —— 上流の諸元に読めない点がある
+### 2-9. いま入れられない機種と、その理由
 
-**ピンを書くだけでは入らなかった。** PaperColor の分岐（M5GFX.cpp 2255-2290）で、
+**「ピンを書くだけ」に見えて入らないものがある。** 保留の理由を残しておく。
+どれも「調べれば分かる」ではなく「調べないと嘘になる」ほうの話。
+
+#### AtomS3 —— ロット差が**寸法まで**違う
+
+REQUIREMENTS §4.4 が例に挙げていた「同じ機種名で載っているガラスが違う」の実物。
+M5GFX.cpp 2463-2510 で 2 つに分かれる。
+
+| | ST7735S | GC9107 |
+| --- | --- | --- |
+| offset | x=2, y=1 | x=0, **y=32** |
+| offset_rotation | 2 | 0 |
+| invert | true | false |
+
+**ピンは同じだが寸法が違う。** `TinyM5::Display` はビルド時の値なので、
+どちらかを書けばもう一方で絵がずれる。REQUIREMENTS §4.3 の
+「別ボードに分ける（見分けがつく場合のみ）／持たない」でいえば、
+**利用者にも見分けがつかない**（開けても分からない）ので**持たない**。
+
+AirQ も 2 つのコントローラが流通しているが、**ピンも寸法も同じ**なので入れた。
+違いはドライバが見つける話で、ヘッダが持つ話ではない。
+
+#### PaperS3 / PaperColor —— 上流の諸元に読めない点がある
+
+PaperColor の分岐（M5GFX.cpp 2255-2290）で、
 
 ```cpp
 bus_cfg.pin_dc  = GPIO_NUM_43;   // D/C

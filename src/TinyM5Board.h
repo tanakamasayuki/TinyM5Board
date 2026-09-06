@@ -49,6 +49,8 @@
 #include "TinyM5BoardTimerCam.h"
 #elif defined(TINYM5_CAPSULE)
 #include "TinyM5BoardCapsule.h"
+#elif defined(TINYM5_AIRQ)
+#include "TinyM5BoardAirQ.h"
 #elif defined(TINYM5_CARDPUTER)
 #include "TinyM5BoardCardputer.h"
 #elif defined(TINYM5_VAMETER)

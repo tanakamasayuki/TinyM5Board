@@ -1,0 +1,22 @@
+--- begin() ---
+pinMode(46, OUTPUT)
+digitalWrite(46, 1)
+i2c0 begin sda=11 scl=12 hz=100000
+i2c1 begin sda=13 scl=15 hz=100000
+pinMode(0, INPUT_PULLUP)
+pinMode(8, INPUT_PULLUP)
+pinMode(2, OUTPUT)
+digitalWrite(2, 1)
+digitalWrite(2, 0)
+digitalWrite(2, 1)
+pinMode(1, INPUT)
+--- board ---
+name=M5AirQ id=15
+pins i2c=11/12 ext=13/15 led=21/1 hold=46
+has display=1 backlight=0 battery=1 intI2c=1 extI2c=1 shared=0
+--- display ---
+bus=spi mosi=6 miso=-1 io2=-1 io3=-1 sclk=5 dc=3 cs=4 rst=-1 3wire=1 sdcs=-1 busy=1
+freq write=40000000 read=16000000
+panel 200x200 offset=0,0 rotation=0 invert=0
+--- battery ---
+mV=4000 level=87

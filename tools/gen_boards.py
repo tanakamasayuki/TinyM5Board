@@ -283,6 +283,34 @@ digitalWrite(2, LOW);
         power_on="",
     ),
     dict(
+        id="AirQ",
+        name="M5AirQ",
+        board_id=15,
+        family="Other",
+        soc="esp32s3",
+        note="An air quality meter behind a 200x200 electrophoretic panel.\n"
+             "Two controllers have shipped under this name - a GDEW0154D67 and\n"
+             "a GDEW0154M09 - but they share the pins and the geometry, so the\n"
+             "difference is the driver's to find and not this header's to\n"
+             "carry.\n"
+             "The sensors on the internal bus are devices; what this carries is\n"
+             "the panel, the two buttons and the battery.",
+        i2c_int=(11, 12),
+        i2c_ext=(13, 15),
+        power_hold=46,
+        rgb_led=(21, 1),
+        buttons={"A": 0, "B": 8},
+        pmic="adc",
+        bat_adc=(14, 2000),
+        backlight=None,
+        display=dict(bus="spi", mosi=6, miso=-1, sclk=5, dc=3, cs=4, rst=2,
+                     busy=1,
+                     freq_write=40000000, freq_read=16000000,
+                     w=200, h=200, ox=0, oy=0, rotation=0, invert=False,
+                     three_wire=True),
+        power_on="",
+    ),
+    dict(
         id="Cardputer",
         name="M5Cardputer",
         board_id=14,
