@@ -8,7 +8,7 @@ uv sync
 uv run pytest --profile host          # everything
 uv run pytest unit --profile host     # the board independent classes, ~16s
 uv run pytest tier0                   # every header, real toolchain, ~2.5 min
-uv run pytest begin --profile host    # the bring-up goldens, ~3.5 min
+uv run pytest begin --profile host    # the bring-up goldens, ~4-5 min
 ```
 
 Cores are never installed with `arduino-cli core install`. Each test's
@@ -22,7 +22,7 @@ axis and what you select on locally:
 
 ```sh
 uv run pytest begin/Stick --profile host    # 4 boards, about 30 seconds
-uv run pytest begin --profile host          # 27 sketches, about 3.5 minutes
+uv run pytest begin --profile host          # 29 sketches, about 4-5 minutes
 ```
 
 Each one builds and runs its own sketch, so the wall clock grows with the

@@ -283,6 +283,57 @@ digitalWrite(2, LOW);
         power_on="",
     ),
     dict(
+        id="Dial",
+        name="M5Dial",
+        board_id=12,
+        family="Other",
+        soc="esp32s3",
+        note="A knob with a round screen. The GC9A01 has no MISO wired, so\n"
+             "nothing reads back from it, and the panel is the only thing on\n"
+             "that bus.\n"
+             "POWER_HOLD but no battery reporting: M5Unified gives this board\n"
+             "no ADC channel, so there is no Power here to ask.\n"
+             "The encoder, the RFID reader and the touch layer are devices;\n"
+             "what this header carries is the pinout they sit on.",
+        i2c_int=(11, 12),
+        i2c_ext=(13, 15),
+        power_hold=46,
+        rgb_led=(21, 1),
+        buttons={"A": 42, "B": 0},
+        pmic=None,
+        backlight=("pwm", 9, 44100, 0),
+        display=dict(bus="spi2", mosi=5, miso=-1, sclk=6, dc=4, cs=7, rst=8,
+                     freq_write=80000000, freq_read=16000000,
+                     w=240, h=240, ox=0, oy=0, rotation=0, invert=True,
+                     three_wire=True),
+        power_on="",
+    ),
+    dict(
+        id="DinMeter",
+        name="M5DinMeter",
+        board_id=13,
+        family="Other",
+        soc="esp32s3",
+        note="The Dial's pinout on a DIN rail, with an ST7789 in place of the\n"
+             "round panel: same bus, same pins, different geometry and a\n"
+             "different backlight curve.\n"
+             "Unlike the Dial this one reports a battery, through the ADC on\n"
+             "GPIO 10.",
+        i2c_int=(11, 12),
+        i2c_ext=(13, 15),
+        power_hold=46,
+        rgb_led=(21, 1),
+        buttons={"A": 42, "B": 0},
+        pmic="adc",
+        bat_adc=(10, 2000),
+        backlight=("pwm", 9, 256, 16),
+        display=dict(bus="spi2", mosi=5, miso=-1, sclk=6, dc=4, cs=7, rst=8,
+                     freq_write=40000000, freq_read=16000000,
+                     w=135, h=240, ox=52, oy=40, rotation=2, invert=True,
+                     three_wire=True),
+        power_on="",
+    ),
+    dict(
         id="NanoC6",
         name="M5NanoC6",
         board_id=140,

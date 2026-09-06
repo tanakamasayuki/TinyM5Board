@@ -49,6 +49,10 @@
 #include "TinyM5BoardTimerCam.h"
 #elif defined(TINYM5_CAPSULE)
 #include "TinyM5BoardCapsule.h"
+#elif defined(TINYM5_DIAL)
+#include "TinyM5BoardDial.h"
+#elif defined(TINYM5_DINMETER)
+#include "TinyM5BoardDinMeter.h"
 #elif defined(TINYM5_NANOC6)
 #include "TinyM5BoardNanoC6.h"
 #elif defined(TINYM5_NANOH2)

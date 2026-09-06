@@ -1,0 +1,23 @@
+--- begin() ---
+pinMode(46, OUTPUT)
+digitalWrite(46, 1)
+i2c0 begin sda=11 scl=12 hz=100000
+i2c1 begin sda=13 scl=15 hz=100000
+pinMode(42, INPUT_PULLUP)
+pinMode(0, INPUT_PULLUP)
+pinMode(8, OUTPUT)
+digitalWrite(8, 1)
+digitalWrite(8, 0)
+digitalWrite(8, 1)
+pwm attach pin=9 ch=0 freq=256 res=9
+pwm write  pin=9 duty=273
+--- board ---
+name=M5DinMeter id=13
+pins i2c=11/12 ext=13/15 led=21/1 hold=46
+has display=1 backlight=1 battery=1 intI2c=1 extI2c=1 shared=0
+--- display ---
+spi mosi=5 miso=-1 sclk=6 dc=4 cs=7 rst=-1 3wire=1 sdcs=-1
+freq write=40000000 read=16000000
+panel 135x240 offset=52,40 rotation=2 invert=1
+--- battery ---
+mV=4000 level=87
